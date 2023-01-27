@@ -14,7 +14,9 @@ model User {
   email    String? @unique
   password String?
   wallet   String?
-  authToken Int?
+  authToken String?
+  referall String @unique
+  referallFriend String?
 }
 model keys {
   id Int @id @default(autoincrement())

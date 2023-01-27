@@ -5,4 +5,5 @@ export const querySchemaRegistro = Joi.object({
   email: Joi.string()
     .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
     .required(),
+  referallCode: Joi.string().min(6).max(6),
 });

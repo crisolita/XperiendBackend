@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { userInfo } from "os";
 
 export const getUserById = async (id: string, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
@@ -19,6 +20,11 @@ export const getAllUsers = async (prisma: PrismaClient) => {
 export const getUserByEmail = async (email: string, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
     where: { email },
+  });
+};
+export const findReferall = async (referall: string, prisma: PrismaClient) => {
+  return await prisma.user.findUnique({
+    where: { referall },
   });
 };
 
@@ -62,7 +68,7 @@ export const updateUserBalance = async (
 };
 export const updateUserAuthToken = async (
   id: string,
-  authToken: number,
+  authToken: string,
   prisma: PrismaClient
 ) => {
   return await prisma.user.update({

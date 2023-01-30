@@ -13,7 +13,6 @@ import {
   getUserById,
   updateUser,
   updateUserAuthToken,
-  updateUserWalletAddress,
 } from "../service/user";
 import { sendEmail } from "../service/mail";
 import { createWallet, manageKeys } from "../service/web3";
@@ -51,7 +50,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
           referallFriend: referallCode ? referallCode : "",
         },
       });
-
+      /// FALTA REGISTRARSE AS WELL EN STOCKEN CAPITAL
       res.json(
         normalizeResponse({
           data: { email: email, fullName: fullName },
@@ -65,11 +64,11 @@ export const userRegisterController = async (req: Request, res: Response) => {
   }
 };
 
-let authCode = JSON.stringify(
-  Math.round(Math.random() * (999999 - 100000) + 100000)
-);
 export const userLoginController = async (req: Request, res: Response) => {
   try {
+    let authCode = JSON.stringify(
+      Math.round(Math.random() * (999999 - 100000) + 100000)
+    );
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
@@ -116,80 +115,57 @@ export const userTokenValidate = async (req: Request, res: Response) => {
   }
 };
 
-export const userWalletController = async (req: Request, res: Response) => {
+export const changePasswordController = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
-    const user = req.user as User;
-    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { wallet } = req?.body;
-    const updatedUser = await updateUserWalletAddress(
-      `${user.id}`,
-      wallet,
-      prisma
-    );
-    res.json(normalizeResponse({ data: updatedUser }));
+    const { email, newPassword, authCode } = req?.body;
+    const user = await getUserByEmail(email, prisma);
+
+    if (user) {
+      if (bcrypt.compareSync(authCode, user.authToken ? user.authToken : "")) {
+        const salt = bcrypt.genSaltSync();
+        updateUser(
+          user.id.toString(),
+          { password: bcrypt.hashSync(newPassword, salt) },
+          prisma
+        );
+        return res.json(normalizeResponse({ data: user }));
+      } else
+        return res.json(normalizeResponse({ data: "Token 2fa incorrecto." }));
+    } else {
+      throw new Error("Usuario no existe");
+    }
   } catch ({ message: error }) {
     res.json(normalizeResponse({ error }));
   }
 };
-
-// export const userController = async (req: Request, res: Response) => {
-//   try {
-//     // @ts-ignore
-//     const prisma = req.prisma as PrismaClient;
-//     const users = await getAllUsers(prisma);
-//     const data: { [key: string]: any } = {};
-//     users.forEach((user) => {
-//       data[user.id] = {
-//         fullName: convertFullName(user.fullName),
-//         balance: user.balance,
-//         wallet: user.wallet,
-//       };
-//     });
-//     return res.json(normalizeResponse({ data }));
-//   } catch ({ message: error }) {
-//     res.json(normalizeResponse({ error }));
-//   }
-// };
-// export const userEditController = (req: Request, res: Response) => {
-//   try {
-//     res.json(normalizeResponse({ data: true }));
-//   } catch ({ message: error }) {
-//     res.json(normalizeResponse({ error }));
-//   }
-// };
-
-export const recoverPasswordController = async (
+export const recoverPasswordSendTokenController = async (
   req: Request,
   res: Response
 ) => {
   try {
+    let authCode = JSON.stringify(
+      Math.round(Math.random() * (999999 - 100000) + 100000)
+    );
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { id, email, fullName, password } = req?.body;
-    const user = await getUserById(id, prisma);
+    const { email } = req?.body;
+    const user = await getUserByEmail(email, prisma);
 
     if (user) {
-      if (
-        compareStrings(fullName, convertFullName(user.fullName)) &&
-        Number(id) === user.id &&
-        email === user.email
-      ) {
-        const salt = bcrypt.genSaltSync();
-        const newUser = await updateUser(
-          id,
-          {
-            password: bcrypt.hashSync(password, salt),
-          },
-          prisma
-        );
-        return res.json(
-          normalizeResponse({ data: newUser, token: createJWT(newUser) })
-        );
-      } else {
-        throw new Error("Error");
-      }
+      const salt = bcrypt.genSaltSync();
+      await sendEmail(email, authCode);
+      await updateUserAuthToken(
+        user.id.toString(),
+        bcrypt.hashSync(authCode, salt),
+        prisma
+      );
+      return res.json(
+        normalizeResponse({
+          data: `Se ha enviado código de validación al correo: ${email}`,
+        })
+      );
     } else {
       throw new Error("No existe el usuario");
     }

@@ -2,9 +2,9 @@ import express from "express";
 import {
   userRegisterController,
   userLoginController,
-  userWalletController,
-  recoverPasswordController,
   userTokenValidate,
+  recoverPasswordSendTokenController,
+  changePasswordController,
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
 import { authenticateToken } from "../middleware/auth";
@@ -22,16 +22,14 @@ router.post(
   userRegisterController
 );
 
-router.post("/recover-password", recoverPasswordController);
+router.post("/recover-password-sendToken", recoverPasswordSendTokenController);
+
+router.post("/recover-password-changePassword", changePasswordController);
 
 router.post("/login", userLoginController);
 
 router.post("/validate", userTokenValidate);
 
-// router.post("/wallet", authenticateToken, userWalletController);
-
 // router.post("/canTransfer", isAdmin, userCanTransferController);
-
-// router.post("/canUse", isAdmin, userCanUseController);
 
 export default router;

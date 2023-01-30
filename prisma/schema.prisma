@@ -10,13 +10,12 @@ datasource db {
 model User {
   id       Int     @id @default(autoincrement())
   fullName String
-  balance  Int?
   email    String? @unique
   password String?
-  wallet   String?
   authToken String?
   referall String @unique
   referallFriend String?
+  mngpayId String?
 }
 model keys {
   id Int @id @default(autoincrement())

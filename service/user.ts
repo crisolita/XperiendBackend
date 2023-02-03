@@ -30,7 +30,7 @@ export const findReferall = async (referall: string, prisma: PrismaClient) => {
 
 export const updateUser = async (
   id: string,
-  data: { email?: string; password?: string },
+  data: { email?: string; password?: string; mngpayId?: string },
   prisma: PrismaClient
 ) => {
   return await prisma.user.update({

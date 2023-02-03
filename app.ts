@@ -7,17 +7,13 @@ import { PrismaClient } from "@prisma/client";
 import userRouter from "./routes/user";
 import kycRouter from "./routes/kyc";
 
-// import fileRouter from "./routes/file";
-// import recordRouter from "./routes/record";
-// import giftRouter from "./routes/gift";
-// import web3Router from "./routes/web3";
 import bodyParser from "body-parser";
 
 dotenv.config();
 
 const prisma = new PrismaClient();
 const app: Express = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 // app.use(morgan("tiny"));

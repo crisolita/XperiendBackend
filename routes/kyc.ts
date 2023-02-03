@@ -4,6 +4,6 @@ const router = express.Router();
 import Joivalidator from "express-joi-validation";
 import { querySchemaKYC } from "../middleware/validation";
 const validator = Joivalidator.createValidator();
-
-router.post("/create", validator.body(querySchemaKYC), createNaturalUser);
+// validator.body(querySchemaKYC)
+router.post("/create", createNaturalUser);
 export default router;

@@ -1,5 +1,6 @@
-import { PrismaClient, User } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import axios from 'axios';
 import bcrypt from "bcrypt";
 import {
   createJWT,
@@ -49,6 +50,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
           referall: referall,
           referallFriend: referallCode ? referallCode : "",
         },
+
       });
       /// FALTA REGISTRARSE AS WELL EN STOCKEN CAPITAL
       res.json(
@@ -59,10 +61,21 @@ export const userRegisterController = async (req: Request, res: Response) => {
     } else {
       throw new Error("Email ya registrado");
     }
-  } catch ({ message: error }) {
+  } catch (error) {
     res.json(normalizeResponse({ error }));
   }
 };
+type registerData = {
+    email: string,
+    phone: string,
+    first_name: string,
+    last_name: string,
+    newsletter: boolean,
+    password: string
+};
+async function name(params:type) {
+  
+}
 
 export const userLoginController = async (req: Request, res: Response) => {
   try {
@@ -90,7 +103,7 @@ export const userLoginController = async (req: Request, res: Response) => {
     } else {
       throw new Error("Email o contraseña incorrectos");
     }
-  } catch ({ message: error }) {
+  } catch (error) {
     res.json(normalizeResponse({ error }));
   }
 };
@@ -110,7 +123,7 @@ export const userTokenValidate = async (req: Request, res: Response) => {
     } else {
       throw new Error("Email incorrecto");
     }
-  } catch ({ message: error }) {
+  } catch (error) {
     res.json(normalizeResponse({ error }));
   }
 };
@@ -130,13 +143,14 @@ export const changePasswordController = async (req: Request, res: Response) => {
           { password: bcrypt.hashSync(newPassword, salt) },
           prisma
         );
+
         return res.json(normalizeResponse({ data: user }));
       } else
         return res.json(normalizeResponse({ data: "Token 2fa incorrecto." }));
     } else {
       throw new Error("Usuario no existe");
     }
-  } catch ({ message: error }) {
+  } catch (error ) {
     res.json(normalizeResponse({ error }));
   }
 };
@@ -169,7 +183,8 @@ export const recoverPasswordSendTokenController = async (
     } else {
       throw new Error("No existe el usuario");
     }
-  } catch ({ message: error }) {
+  } catch (error) {
     res.json(normalizeResponse({ error }));
   }
 };
+

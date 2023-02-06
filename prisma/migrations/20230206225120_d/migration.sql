@@ -21,14 +21,6 @@ CREATE TABLE "keys" (
     CONSTRAINT "keys_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "second" (
-    "id" INTEGER NOT NULL,
-    "key" TEXT NOT NULL,
-
-    CONSTRAINT "second_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 

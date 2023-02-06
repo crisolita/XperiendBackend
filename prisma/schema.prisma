@@ -9,7 +9,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 model User {
   id       Int     @id @default(autoincrement())
   fullName String
@@ -23,9 +22,5 @@ model User {
 model keys {
   id Int @id @default(autoincrement())
   wallet String
-  key String
-}
-model second {
-  id Int @id
   key String
 }

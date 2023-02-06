@@ -17,9 +17,5 @@ export const querySchemaKYC = Joi.object({
     .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
     .required(),
   Occupation: Joi.string().required(),
-  AddressLine1: Joi.string().required(),
-  City: Joi.string().required(),
-  Region: Joi.string().required(),
-  PostalCode: Joi.string().required(),
-  Country: Joi.string().required(),
+  Address: Joi.string().required(),
 });

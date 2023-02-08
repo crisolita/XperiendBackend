@@ -28,7 +28,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, fullName, password, referallCode } = req?.body;
+    const { email, first_name,last_name, password, referallCode, phone,newsletter } = req?.body;
     const user = await getUserByEmail(email, prisma);
     let referall;
     let resultReferall;
@@ -45,21 +45,17 @@ export const userRegisterController = async (req: Request, res: Response) => {
       await prisma.user.create({
         data: {
           email: email,
-          fullName: fullName,
+          first_name:first_name,last_name:last_name,
           password: bcrypt.hashSync(password, salt),
           referall: referall,
           referallFriend: referallCode ? referallCode : "",
         },
 
       });
-      /// FALTA REGISTRARSE AS WELL EN STOCKEN CAPITAL
-      res.json(
-        normalizeResponse({
-          data: { email: email, fullName: fullName },
-        })
-      );
+      const other= await registerStocken(res,email,phone,first_name,last_name,newsletter,password)
+      return other;
     } else {
-      throw new Error("Email ya registrado");
+      res.json(normalizeResponse({ data:"Email ya existe" }));
     }
   } catch (error) {
     res.json(normalizeResponse({ error }));
@@ -73,9 +69,29 @@ type registerData = {
     newsletter: boolean,
     password: string
 };
-async function name(params:type) {
-  
+async function registerStocken(res:any,email:string,phone:string,first_name:string,last_name:string,newsletter:boolean,password:string) {
+  try {
+    const { data } = await axios.post<registerData>(
+      'https://stocken-backend.cloto.pw/api/v1/users/',
+      { email:email,phone: phone? phone:"",first_name:first_name,last_name:last_name,newsletter:newsletter,password:password}
+    );
+    console.log(JSON.stringify(data, null, 4));
+    return  res.json(
+      normalizeResponse({
+        data: { email: email, first_name: first_name,last_name:last_name,"ok":true },
+      })
+    );
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.log('error message: ', error.message);
+      return res.json({data:error});
+    } else {
+      console.log('unexpected error: ', error);
+      return res.json({data:error});
+    }
+  }
 }
+
 
 export const userLoginController = async (req: Request, res: Response) => {
   try {

@@ -17,6 +17,8 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 // app.use(morgan("tiny"));
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -24,7 +26,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   req.prisma = prisma;
   next();
 });
-app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/user", userRouter);
 app.use("/kyc", kycRouter);

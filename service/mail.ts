@@ -14,7 +14,7 @@ export const transporter = nodemailer.createTransport({
   secure: true,
 });
 
-export async function sendEmail(email: string, authCode: string) {
+export async function sendAuthEmail(email: string, authCode: string) {
   const mailData = {
     from: process.env.EMAILADDRESS, // sender address
     to: email, // list of receivers

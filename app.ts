@@ -30,6 +30,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use("/user", userRouter);
 app.use("/kyc", kycRouter);
 
+app.use((err:any, req:any, res:any, next:any) => {
+  if (err && err.error && err.error.isJoi) {
+    // we had a joi error, let's return a custom 400 json response
+    res.status(400).json({
+      error: err.error.details[0].message
+    });
+  } else {
+    // pass on to another error handler
+    next(err);
+  }
+});
+
 app.get("/", (req: Request, res: Response) => res.type("html").send(html));
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

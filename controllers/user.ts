@@ -1,34 +1,47 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
-import axios from 'axios';
 import bcrypt from "bcrypt";
-import {
-  createJWT,
-  generateRandomString,
-  normalizeResponse,
-} from "../utils/utils";
+import { createJWT, generateRandomString } from "../utils/utils";
 import {
   findReferall,
   getAllUsers,
   getUserByEmail,
-  getUserById,
   updateUser,
-  updateUserAuthToken,
+
 } from "../service/user";
-import { sendEmail } from "../service/mail";
-import { createWallet, manageKeys } from "../service/web3";
+import { sendAuthEmail } from "../service/mail";
+
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
 const compareStrings = (str1: string, str2: string) =>
   str1?.toLowerCase().trim() === str2?.toLowerCase().trim();
 
+  export const getAllUsersController = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const users = await getAllUsers(prisma);
+      const data: { [key: string]: any } = {};
+      users.forEach((user) => {
+        data[user.id] = {
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+        };
+      });
+      return res.status(200).json({ data:data });
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
 export const userRegisterController = async (req: Request, res: Response) => {
   try {
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, first_name,last_name, password, referallCode, phone,newsletter } = req?.body;
+    const { email, first_name, last_name, password, referallCode,newsletter,phone} = req?.body;
     const user = await getUserByEmail(email, prisma);
     let referall;
     let resultReferall;
@@ -39,61 +52,55 @@ export const userRegisterController = async (req: Request, res: Response) => {
     } while (resultReferall);
     if (referallCode) {
       referallFriend = await findReferall(referallCode, prisma);
-      if (!referallFriend) throw new Error("Codigo de referido no valido");
+      if (!referallFriend) return res.status(404).json({error:"Codigo de referido no valido"})
     }
     if (!user) {
-      await prisma.user.create({
+      const newUser=await prisma.user.create({
         data: {
           email: email,
-          first_name:first_name,last_name:last_name,
+          first_name:first_name,
+          last_name:last_name,
           password: bcrypt.hashSync(password, salt),
-          referall: referall,
-          referallFriend: referallCode ? referallCode : "",
+          referall:referall,
+          referallFriend: referallCode? referallCode :null,
         },
-
       });
-      const other= await registerStocken(res,email,phone,first_name,last_name,newsletter,password)
-      return other;
-    } else {
-      res.json(normalizeResponse({ data:"Email ya existe" }));
+        res.status(200).json(
+        { data: { email: email, first_name: first_name,last_name:last_name, referallCode:referall} }
+      );
+      } else {
+      res.status(400).json({error:"Email ya registrado"})
     }
-  } catch (error) {
-    res.json(normalizeResponse({ error }));
+  } catch ( error ) {
+    console.log(error)
+    res.status(500).json({error:error})
   }
 };
-type registerData = {
-    email: string,
-    phone: string,
-    first_name: string,
-    last_name: string,
-    newsletter: boolean,
-    password: string
-};
-async function registerStocken(res:any,email:string,phone:string,first_name:string,last_name:string,newsletter:boolean,password:string) {
-  try {
-    const { data } = await axios.post<registerData>(
-      'https://stocken-backend.cloto.pw/api/v1/users/',
-      { email:email,phone: phone? phone:"",first_name:first_name,last_name:last_name,newsletter:newsletter,password:password}
-    );
-    console.log(JSON.stringify(data, null, 4));
-    return  res.json(
-      normalizeResponse({
-        data: { email: email, first_name: first_name,last_name:last_name,"ok":true },
-      })
-    );
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.log('error message: ', error.message);
-      return res.json({data:error});
-    } else {
-      console.log('unexpected error: ', error);
-      return res.json({data:error});
-    }
-  }
-}
+
 
 
 export const userLoginController = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const { email, authCode } = req?.body;
+    const user = await getUserByEmail(email, prisma);
+    if (user ) {
+      if (bcrypt.compareSync(authCode,user.authToken? user.authToken :""))
+        return res.status(200).json(
+       { data: {email:user.email,userid:user.id,first_name:user.first_name,last_name:user.last_name,  token: createJWT(user)} }
+        );
+      else
+        return res.status(403).json({ error: "Token auth incorrecto." });
+    } else {
+      return res.status(400).json({ error: "Email incorrecto" });
+    }
+  } catch ( error ) {
+    return res.status(500).json({ error: error });
+
+  }
+};
+export const getRecoveryCode =async (req: Request, res: Response) => {
   try {
     let authCode = JSON.stringify(
       Math.round(Math.random() * (999999 - 100000) + 100000)
@@ -101,106 +108,72 @@ export const userLoginController = async (req: Request, res: Response) => {
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, password } = req?.body;
-    const user = await getUserByEmail(email, prisma);
-
-    if (user && user.password && bcrypt.compareSync(password, user.password)) {
-      await sendEmail(email, authCode);
-      await updateUserAuthToken(
-        user.id.toString(),
-        bcrypt.hashSync(authCode, salt),
-        prisma
-      );
-      return res.json(
-        normalizeResponse({
-          data: `Se ha enviado código de validación al correo: ${email}`,
-        })
-      );
-    } else {
-      throw new Error("Email o contraseña incorrectos");
-    }
-  } catch (error) {
-    res.json(normalizeResponse({ error }));
-  }
-};
-export const userTokenValidate = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const { email, authCode } = req?.body;
+    const { email} = req?.body;
     const user = await getUserByEmail(email, prisma);
     if (user) {
-      if (bcrypt.compareSync(authCode, user.authToken ? user.authToken : ""))
-        return res.json(
-          normalizeResponse({ data: user, token: createJWT(user) })
-        );
-      else
-        return res.json(normalizeResponse({ data: "Token 2fa incorrecto." }));
+      await sendAuthEmail(email, authCode);
+      await updateUser(user.id.toString(), {authToken:bcrypt.hashSync(authCode, salt)},prisma);
+      return res.status(200).json(
+       {
+          data: `Se ha enviado código de validación al correo: ${email}`,
+        }
+      );
     } else {
-      throw new Error("Email incorrecto");
+      res.status(400).json({error:"Email o contraaseña incorrectos"})
     }
-  } catch (error) {
-    res.json(normalizeResponse({ error }));
-  }
-};
+  } catch(error) {
+    return res.status(500).json({ error: error });
+  } 
+}
+export const getAuthCode = async (req: Request, res: Response) => {
+  try {
+    let authCode = JSON.stringify(
+      Math.round(Math.random() * (999999 - 100000) + 100000)
+    );
+    const salt = bcrypt.genSaltSync();
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const { email, password} = req?.body;
+    const user = await getUserByEmail(email, prisma);
+    if (user && user.password && bcrypt.compareSync(password, user.password)) {
+      await sendAuthEmail(email, authCode);
+      await updateUser(user.id.toString(),{authToken:bcrypt.hashSync(authCode, salt)} ,prisma);
+      return res.status(200).json(
+       {
+          data: `Se ha enviado código de validación al correo: ${email}`,
+        }
+      );
+    } else {
+      res.status(400).json({error:"Email o contraaseña incorrectos"})
+    }
+  } catch(error) {
+    console.log(error)
+    return res.status(500).json({ error: error });
+  } 
+}
 
 export const changePasswordController = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, newPassword, authCode } = req?.body;
-    const user = await getUserByEmail(email, prisma);
-
+    const { newPassword, authCode, email} = req?.body;
+    const user= await getUserByEmail(email,prisma)
     if (user) {
-      if (bcrypt.compareSync(authCode, user.authToken ? user.authToken : "")) {
+      if (bcrypt.compareSync(authCode,user.authToken? user.authToken : "")) {
         const salt = bcrypt.genSaltSync();
-        updateUser(
+        await updateUser(
           user.id.toString(),
           { password: bcrypt.hashSync(newPassword, salt) },
           prisma
         );
-
-        return res.json(normalizeResponse({ data: user }));
+        return res.status(200).json({ data: {email:user.email} });
       } else
-        return res.json(normalizeResponse({ data: "Token 2fa incorrecto." }));
+        return res.status(400).json({ error: "Token 2fa incorrecto." });
     } else {
-      throw new Error("Usuario no existe");
+      return res.status(404).json({ error: "Usuario no existe." });
     }
-  } catch (error ) {
-    res.json(normalizeResponse({ error }));
-  }
-};
-export const recoverPasswordSendTokenController = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    let authCode = JSON.stringify(
-      Math.round(Math.random() * (999999 - 100000) + 100000)
-    );
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const { email } = req?.body;
-    const user = await getUserByEmail(email, prisma);
-
-    if (user) {
-      const salt = bcrypt.genSaltSync();
-      await sendEmail(email, authCode);
-      await updateUserAuthToken(
-        user.id.toString(),
-        bcrypt.hashSync(authCode, salt),
-        prisma
-      );
-      return res.json(
-        normalizeResponse({
-          data: `Se ha enviado código de validación al correo: ${email}`,
-        })
-      );
-    } else {
-      throw new Error("No existe el usuario");
-    }
-  } catch (error) {
-    res.json(normalizeResponse({ error }));
+  } catch ( error ) {
+    return res.status(500).json({ error: error });
   }
 };
 

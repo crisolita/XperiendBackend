@@ -5,9 +5,10 @@ import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 
 import userRouter from "./routes/user";
-import kycRouter from "./routes/kyc";
+// import kycRouter from "./routes/kyc";
 
 import bodyParser from "body-parser";
+// import passport from "passport";
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use("/user", userRouter);
-app.use("/kyc", kycRouter);
+// app.use("/kyc", kycRouter);
 
 app.use((err:any, req:any, res:any, next:any) => {
   if (err && err.error && err.error.isJoi) {

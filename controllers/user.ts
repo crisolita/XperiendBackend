@@ -3,19 +3,22 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { createJWT, generateRandomString } from "../utils/utils";
 import {
-  findReferall,
+  findUsername,
   getAllUsers,
   getUserByEmail,
+  getUserByGoogleID,
   updateUser,
 
 } from "../service/user";
-import { sendAuthEmail } from "../service/mail";
+import { sendAuthEmail, sendWelcomeEmail } from "../service/mail";
+// import { google } from 'googleapis';
+// import axios from "axios";
+
 
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
-const compareStrings = (str1: string, str2: string) =>
-  str1?.toLowerCase().trim() === str2?.toLowerCase().trim();
+
 
   export const getAllUsersController = async (req: Request, res: Response) => {
     try {
@@ -41,17 +44,14 @@ export const userRegisterController = async (req: Request, res: Response) => {
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, first_name, last_name, password, referallCode,newsletter,phone} = req?.body;
+    const { email, first_name, last_name, password, referallUser,userName} = req?.body;
     const user = await getUserByEmail(email, prisma);
-    let referall;
-    let resultReferall;
+    let username;
     let referallFriend;
-    do {
-      referall = generateRandomString(6);
-      resultReferall = await findReferall(referall, prisma);
-    } while (resultReferall);
-    if (referallCode) {
-      referallFriend = await findReferall(referallCode, prisma);
+      username = await findUsername(userName, prisma);
+    if(username) return res.json({error:"Username ya existe!!"})
+    if (referallUser) {
+      referallFriend = await findUsername(referallUser, prisma);
       if (!referallFriend) return res.status(404).json({error:"Codigo de referido no valido"})
     }
     if (!user) {
@@ -61,12 +61,13 @@ export const userRegisterController = async (req: Request, res: Response) => {
           first_name:first_name,
           last_name:last_name,
           password: bcrypt.hashSync(password, salt),
-          referall:referall,
-          referallFriend: referallCode? referallCode :null,
+          userName:userName,
+          referallFriend: referallUser? referallUser :null,
         },
       });
+        await sendWelcomeEmail(email,userName);
         res.status(200).json(
-        { data: { email: email, first_name: first_name,last_name:last_name, referallCode:referall} }
+        { data: { email: email, first_name: first_name,last_name:last_name, referallCode:userName,userName:userName} }
       );
       } else {
       res.status(400).json({error:"Email ya registrado"})
@@ -76,7 +77,35 @@ export const userRegisterController = async (req: Request, res: Response) => {
     res.status(500).json({error:error})
   }
 };
+// export const userRegisterGoogle = async (req: Request, res: Response) => {
+//   try {
+//     const salt = bcrypt.genSaltSync();
+//     // @ts-ignore
+//     const oauth2Client = new google.auth.OAuth2(
+//       process.env.CLIENT_ID,
+//       process.env.CLIENT_SECRET,
+//       `https://localhost:3000`,
+//     );
+//     const {tokens}=req?.body
+//     const scopes = [
+//       'https://www.googleapis.com/auth/userinfo.profile',
+//       'https://www.googleapis.com/auth/userinfo.email',
+//     ];
 
+//     const URL= oauth2Client.generateAuthUrl({
+//       access_type: 'online',
+//       prompt: 'consent',
+//       scope: scopes, // If you only need one scope you can pass it as string
+//     });
+
+//         res.status(200).json(
+//         { data: {URL} }
+//       );
+//       } catch ( error ) {
+//     console.log(error)
+//     res.status(500).json({error:error})
+//   }
+// };
 
 
 export const userLoginController = async (req: Request, res: Response) => {

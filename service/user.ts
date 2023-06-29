@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { userInfo } from "os";
 
 export const getUserById = async (id: string, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
@@ -22,9 +21,14 @@ export const getUserByEmail = async (email: string, prisma: PrismaClient) => {
     where: { email },
   });
 };
-export const findReferall = async (referall: string, prisma: PrismaClient) => {
+export const getUserByGoogleID = async (googleID: string, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
-    where: { referall },
+    where: { googleID:googleID },
+  });
+};
+export const findUsername = async (userName: string, prisma: PrismaClient) => {
+  return await prisma.user.findUnique({
+    where: { userName },
   });
 };
 

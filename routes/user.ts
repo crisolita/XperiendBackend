@@ -5,6 +5,8 @@ import {
   changePasswordController,
   getRecoveryCode,
   getAuthCode,
+  getAllUsersController,
+  
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
 import { authenticateToken } from "../middleware/auth";
@@ -20,6 +22,9 @@ router.post(
   validator.body(querySchemaRegistro),
   userRegisterController
 );
+router.get("/",getAllUsersController)
+
+
 router.post("/changePassword", changePasswordController);
 router.post("/login", userLoginController);
 router.post("/getRecovery",getRecoveryCode)

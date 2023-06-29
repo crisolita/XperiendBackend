@@ -1,7 +1,8 @@
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
-    "fullName" TEXT NOT NULL,
+    "first_name" TEXT NOT NULL,
+    "last_name" TEXT NOT NULL,
     "email" TEXT,
     "password" TEXT,
     "authToken" TEXT,
@@ -10,15 +11,6 @@ CREATE TABLE "User" (
     "mngpayId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "keys" (
-    "id" SERIAL NOT NULL,
-    "wallet" TEXT NOT NULL,
-    "key" TEXT NOT NULL,
-
-    CONSTRAINT "keys_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

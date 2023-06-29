@@ -16,12 +16,7 @@ model User {
   email    String? @unique
   password String?
   authToken String?
-  referall String @unique
   referallFriend String?
-  mngpayId String?
-}
-model keys {
-  id Int @id @default(autoincrement())
-  wallet String
-  key String
+  googleID String? @unique
+  userName String? @unique
 }

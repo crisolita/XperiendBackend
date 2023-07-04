@@ -50,7 +50,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
     let username;
     let referallFriend;
       username = await findUsername(userName, prisma);
-    if(username) return res.json({error:"Username ya existe!!"})
+    if(username) return res.status(400).json({error:"Username ya existe!!"})
     if (referallUser) {
       referallFriend = await findUsername(referallUser, prisma);
       if (!referallFriend) return res.status(404).json({error:"Codigo de referido no valido"})

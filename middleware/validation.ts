@@ -1,7 +1,5 @@
 import Joi from "joi";
 export const querySchemaRegistro = Joi.object({
-  first_name: Joi.string().required().messages({'string.required': `Primer nombre es requerido`,'string.empty':"Primer nombre no debe estar vacio"}),
-  last_name: Joi.string().required().messages({'string.required': `Apellido es requerido`,'string.empty':"Apellido no debe estar vacio"}),
   password: Joi.string().required().pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?])[A-Za-z0-9`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?]{8,}$/)).messages({  'string.base': `Contraseña debe ser de tipo texto`,
   'string.empty': `Contraseña no puede estar vacio`,
   'string.min': `Contraseña debe tener al menos 8 caracteres`,

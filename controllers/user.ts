@@ -28,9 +28,9 @@ export const convertFullName = (str: string) =>
       const data: { [key: string]: any } = {};
       users.forEach((user) => {
         data[user.id] = {
-          first_name: user.first_name,
-          last_name: user.last_name,
+         userName:user.userName,
           email: user.email,
+          referrallFriend:user.referallFriend
         };
       });
       return res.status(200).json({ data:data });
@@ -44,7 +44,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, first_name, last_name, password, referallUser,userName} = req?.body;
+    const { email, password, referallUser,userName} = req?.body;
     const user = await getUserByEmail(email, prisma);
     let username;
     let referallFriend;
@@ -58,8 +58,6 @@ export const userRegisterController = async (req: Request, res: Response) => {
       const newUser=await prisma.user.create({
         data: {
           email: email,
-          first_name:first_name,
-          last_name:last_name,
           password: bcrypt.hashSync(password, salt),
           userName:userName,
           referallFriend: referallUser? referallUser :null,
@@ -67,7 +65,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
       });
         await sendWelcomeEmail(email,userName);
         res.status(200).json(
-        { data: { email: email, first_name: first_name,last_name:last_name, referallCode:userName,userName:userName} }
+        { data: { email: email, referallCode:userName,userName:userName} }
       );
       } else {
       res.status(400).json({error:"Email ya registrado"})
@@ -117,7 +115,7 @@ export const userLoginController = async (req: Request, res: Response) => {
     if (user ) {
       if (bcrypt.compareSync(authCode,user.authToken? user.authToken :""))
         return res.status(200).json(
-       { data: {email:user.email,userid:user.id,first_name:user.first_name,last_name:user.last_name,  token: createJWT(user)} }
+       { data: {email:user.email,userid:user.id,  token: createJWT(user)} }
         );
       else
         return res.status(403).json({ error: "Token auth incorrecto." });

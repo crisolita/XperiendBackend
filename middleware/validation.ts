@@ -9,8 +9,8 @@ export const querySchemaRegistro = Joi.object({
     .email({ minDomainSegments: 2 })
     .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"}),
     referallUser: Joi.string().min(6),
-    userName: Joi.string().min(6)
-
+    userName: Joi.string().min(6),
+    newsletter:Joi.boolean()
 });
 export const querySchemaUGetAuth = Joi.object({
   password: Joi.string().required().pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?])[A-Za-z0-9`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?]{8,}$/)).messages({  'string.base': `Contraseña debe ser de tipo texto`,

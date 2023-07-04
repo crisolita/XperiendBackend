@@ -17,4 +17,5 @@ model User {
   referallFriend String?
   googleID String? @unique
   userName String? @unique
+  newsletter Boolean?
 }

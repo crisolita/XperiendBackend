@@ -30,7 +30,8 @@ export const convertFullName = (str: string) =>
         data[user.id] = {
          userName:user.userName,
           email: user.email,
-          referrallFriend:user.referallFriend
+          referrallFriend:user.referallFriend,
+          newsletter:user.newsletter
         };
       });
       return res.status(200).json({ data:data });
@@ -44,7 +45,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
     const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { email, password, referallUser,userName} = req?.body;
+    const { email, password, referallUser,userName,newsletter} = req?.body;
     const user = await getUserByEmail(email, prisma);
     let username;
     let referallFriend;
@@ -61,6 +62,7 @@ export const userRegisterController = async (req: Request, res: Response) => {
           password: bcrypt.hashSync(password, salt),
           userName:userName,
           referallFriend: referallUser? referallUser :null,
+          newsletter:newsletter
         },
       });
         await sendWelcomeEmail(email,userName);

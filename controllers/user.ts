@@ -117,7 +117,7 @@ export const userLoginController = async (req: Request, res: Response) => {
     if (user ) {
       if (bcrypt.compareSync(authCode,user.authToken? user.authToken :""))
         return res.status(200).json(
-       { data: {email:user.email,userid:user.id,  token: createJWT(user)} }
+       { data: {email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,  token: createJWT(user)} }
         );
       else
         return res.status(403).json({ error: "Token auth incorrecto." });

@@ -9,13 +9,97 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-model User {
-  id       Int     @id @default(autoincrement())
-  email    String? @unique
-  password String?
-  authToken String?
+
+model Admins {
+  id             Int       @id @default(autoincrement())
+  email          String?   @unique
+  password       String?
+  authToken      String?
   referallFriend String?
-  googleID String? @unique
-  userName String? @unique
-  newsletter Boolean?
+  googleID       String?   @unique
+  userName       String?   @unique
+  Projects       Projects?
+}
+
+model User {
+  id             Int        @id @default(autoincrement())
+  email          String     @unique
+  password       String?
+  authToken      String?
+  referallFriend String?
+  googleID       String?    @unique
+  userName       String?    @unique
+  newsletter     Boolean?
+  orders Orders[]
+  projects       Projects[]
+}
+
+model Cuentas {
+id   Int  @id @default(autoincrement())
+numero Int
+banco String
+projects Projects[]
+}
+
+model Projects {
+  id                          Int     @id @default(autoincrement())
+  nombre                        String
+  cantidad                    Int
+  precioUnitario              Float
+  creator_id                  Int?    @unique
+  estado                      Estado?
+  description                 String?
+  ubicacion                   String?
+  plazo_meses                 Int?
+  fecha_proximamente          DateTime?
+  fecha_publico          DateTime?
+  fecha_abierto          DateTime?
+  fecha_cerrado         DateTime?
+  fecha_en_proceso          DateTime?
+  fecha_reinversion          DateTime?
+  fecha_terminado          DateTime?
+  costo_ejecucion_conservador Float?
+  beneficio_conservador       Float?
+  rentabilidad_conservador    Float?
+  costo_ejecucion_moderado    Float?
+  beneficio_moderado          Float?
+  rentabilidad_moderado       Float?
+  costo_ejecucion_favorable   Float?
+  beneficio_favorable         Float?
+  rentabilidad_favorable      Float?
+  concepto_bancario String?
+  cuenta_id Int
+  cuenta Cuentas @relation(fields:[cuenta_id],references: [id])
+  users                       User[]
+  admin                       Admins? @relation(fields: [creator_id], references: [id])
+}
+model Orders {
+id   Int     @id @default(autoincrement())
+tipo Tipo
+user_id Int
+nft_id Int?
+nft  NFT? @relation(fields: [nft_id],references: [id])
+user User @relation(fields:[user_id], references: [id])
+}
+model NFT {
+id   Int     @id
+txHash String
+orders Orders[]
+}
+enum Estado {
+  NUEVO
+  PROXIMAMENTE
+  PUBLICO
+  ABIERTO
+  EN_PROCESO
+  CERRADO
+  REINVERSION
+  TERMINADO
+}
+enum Tipo {
+COMPRA
+VENTA
+RECOMPRA
+RECLARMAR
+REINVERSION
 }

@@ -1,18 +1,15 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { createJWT, generateRandomString } from "../utils/utils";
+import { createJWT } from "../utils/utils";
 import {
   findUsername,
   getAllUsers,
   getUserByEmail,
-  getUserByGoogleID,
   updateUser,
 
 } from "../service/user";
 import { sendAuthEmail, sendWelcomeEmail } from "../service/mail";
-// import { google } from 'googleapis';
-// import axios from "axios";
 
 
 
@@ -141,7 +138,7 @@ export const getRecoveryCode =async (req: Request, res: Response) => {
     const user = await getUserByEmail(email, prisma);
     if (user) {
       await sendAuthEmail(email, authCode);
-      await updateUser(user.id.toString(), {authToken:bcrypt.hashSync(authCode, salt)},prisma);
+      await updateUser(user.id, {authToken:bcrypt.hashSync(authCode, salt)},prisma);
       return res.status(200).json(
        {
           data: `Se ha enviado código de validación al correo: ${email}`,
@@ -166,7 +163,7 @@ export const getAuthCode = async (req: Request, res: Response) => {
     const user = await getUserByEmail(email, prisma);
     if (user && user.password && bcrypt.compareSync(password, user.password)) {
       await sendAuthEmail(email, authCode);
-      await updateUser(user.id.toString(),{authToken:bcrypt.hashSync(authCode, salt)} ,prisma);
+      await updateUser(user.id,{authToken:bcrypt.hashSync(authCode, salt)} ,prisma);
       return res.status(200).json(
        {
           data: `Se ha enviado código de validación al correo: ${email}`,
@@ -191,7 +188,7 @@ export const changePasswordController = async (req: Request, res: Response) => {
       if (bcrypt.compareSync(authCode,user.authToken? user.authToken : "")) {
         const salt = bcrypt.genSaltSync();
         await updateUser(
-          user.id.toString(),
+          user.id,
           { password: bcrypt.hashSync(newPassword, salt) },
           prisma
         );

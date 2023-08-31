@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { updateUserAuthToken } from "./user";
 
 dotenv.config();
 

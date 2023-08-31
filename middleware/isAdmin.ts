@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { mainModule } from "process";
 import { JWT_PRIVATE_KEY } from "../utils/utils";
 
 export function isAdmin(req: Request, res: Response, next: NextFunction) {

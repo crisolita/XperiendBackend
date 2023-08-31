@@ -33,27 +33,15 @@ export const findUsername = async (userName: string, prisma: PrismaClient) => {
 };
 
 export const updateUser = async (
-  id: string,
-  data: { email?: string; password?: string; mngpayId?: any | undefined,authToken?:string,},
+  id: number,
+  data: { email?: string; password?: string; clientSecret?: string,authToken?:string,},
   prisma: PrismaClient
 ) => {
   return await prisma.user.update({
-    where: { id: Number(id) },
+    where: { id: id },
     data: {
       ...data,
     },
   });
 };
 
-export const updateUserAuthToken = async (
-  id: string,
-  authToken: string,
-  prisma: PrismaClient
-) => {
-  return await prisma.user.update({
-    where: { id: Number(id) },
-    data: {
-      authToken,
-    },
-  });
-};

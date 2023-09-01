@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import fs from "fs"
+import { Readable } from 'stream';
 
 const spacesEndpoint = new AWS.Endpoint(process.env.SPACEENDPOINT? process.env.SPACEENDPOINT : "");
 const s3 = new AWS.S3({
@@ -8,12 +8,14 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.SPACESECRETKEY,
 });
 // Subir una imagen
-export const uploadImage = async (key:string,ruta:string)=>{
-
+export const uploadImage = async (key:ArrayBuffer,ruta:string)=>{
+  const stream = new Readable();
+  stream.push(Buffer.from(key));
+  stream.push(null);
   const params = {
     Bucket: 'xperiend-images',
-    Key: `${key}.jpg`,
-    Body: fs.createReadStream(`${ruta}.jpg`),
+    Key: `${ruta}.jpg`,
+    Body: stream,
   };
   s3.upload(params, function(err:any, data:any) {
     if (err) {

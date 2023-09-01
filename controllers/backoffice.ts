@@ -1,8 +1,8 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import { sendAuthEmail, sendWelcomeEmail } from "../service/mail";
-
-
+import { uploadImage } from "../service/aws";
+import fetch from "node-fetch";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -32,14 +32,18 @@ export const convertFullName = (str: string) =>
         costo_ejecucion_favorable,
         beneficio_favorable,
         rentabilidad_favorable,
-        images,numero,banco } = req.body;
+      numero,banco } = req.body;
      // @ts-ignore
     const USER= req.user as User;
     const cuenta=await prisma.cuentas.create({data:{
         numero,
-        banco,
-
+        banco
     }})
+
+      // // Utiliza fetch aquí dentro
+      let img= await fetch("https://picsum.photos/200/300")
+      const blob = await img.arrayBuffer()
+
     const project=await prisma.projects.create({data:{
         nombre,cantidad, precioUnitario,description,ubicacion, fecha_proximamente,
         fecha_publico,
@@ -59,10 +63,18 @@ export const convertFullName = (str: string) =>
         beneficio_favorable, 
         rentabilidad_favorable,
         cuenta_id:cuenta.id,
-        creator_id:USER.id,
         estado:"NUEVO"
-    }})
-    return res.status(200).json({ data:project });
+        }})
+    const uniquePath=`${nombre}_${project.id}_${project.count_image? project.count_image+1 : 1}`
+    await uploadImage(blob,uniquePath)
+    const image=await prisma.projectImages.create({
+      data:{
+        project_id:project.id,
+        path:uniquePath
+      }
+    })
+    await prisma.projects.update({where:{id:project.id}, data:{count_image:project.count_image? project.count_image+1:1}})
+    return res.status(200).json({ data:{project,image,cuenta} });
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -80,3 +92,4 @@ export const convertFullName = (str: string) =>
       res.status(500).json( error );
     }
   };
+

@@ -18,7 +18,6 @@ model Admins {
   referallFriend String?
   googleID       String?   @unique
   userName       String?   @unique
-  Projects       Projects?
 }
 
 model User {
@@ -36,7 +35,7 @@ model User {
 
 model Cuentas {
 id   Int  @id @default(autoincrement())
-numero Int
+numero String
 banco String
 projects Projects[]
 }
@@ -69,9 +68,16 @@ model Projects {
   rentabilidad_favorable      Float?
   concepto_bancario String?
   cuenta_id Int
+  count_image Int?
+  images ProjectImages[]
   cuenta Cuentas @relation(fields:[cuenta_id],references: [id])
   users                       User[]
-  admin                       Admins? @relation(fields: [creator_id], references: [id])
+}
+model ProjectImages {
+id   Int     @id @default(autoincrement())
+project_id Int
+path String
+project Projects @relation(fields:[project_id],references: [id])
 }
 model Orders {
 id   Int     @id @default(autoincrement())

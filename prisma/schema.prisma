@@ -75,8 +75,8 @@ model Projects {
 }
 model ProjectImages {
 id   Int     @id @default(autoincrement())
-project_id Int
-path String
+project_id Int 
+path String @unique
 project Projects @relation(fields:[project_id],references: [id])
 }
 model Orders {

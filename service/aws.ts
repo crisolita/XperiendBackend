@@ -34,3 +34,17 @@ export const getImage = async (key:string)=>{
   const imageUrl = s3.getSignedUrl('getObject', getObjectParams);
   return imageUrl;
 }
+/// borrar una imagen 
+export const deleteImageAWS = async (key: string) => {
+  const params = {
+    Bucket: 'xperiend-images',
+    Key: `${key}.jpg`,
+  };
+
+  try {
+    await s3.deleteObject(params).promise();
+    console.log('Imagen eliminada con éxito');
+  } catch (err) {
+    console.error('Error al eliminar la imagen:', err);
+  }
+};

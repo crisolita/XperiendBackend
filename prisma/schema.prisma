@@ -29,6 +29,7 @@ model User {
   googleID       String?    @unique
   userName       String?    @unique
   newsletter     Boolean?
+  kycPassed      Boolean?
   orders         Orders[]
   projects       Projects[]
 }

@@ -6,13 +6,14 @@ import { authenticateToken } from "../middleware/auth";
 const router = express.Router();
 
 
+//proyectos
+router.post("/create-project", isAdmin, createProject);
+router.get("/getProjects",authenticateToken, getAllProjects);
+router.get("/getImagesByProject",isAdmin,getImagesByProject)
+router.delete("/deleteImage",isAdmin,deleteImage)
+router.post("/addImage", isAdmin,addImage);
+router.post("/updateProject",isAdmin, updateProject);
 
-router.post("/create-project", authenticateToken, createProject);
-router.get("/getProjects", getAllProjects);
-router.get("/getImagesByProject",getImagesByProject)
-router.delete("/deleteImage",deleteImage)
-router.post("/addImage", addImage);
-router.post("/updateProject", updateProject);
 
 
 

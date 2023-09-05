@@ -110,6 +110,8 @@ export const convertFullName = (str: string) =>
       return res.status(500).json({error:e})
       }  
   }
+  /// gestion proyecto 
+  
   export const updateProjectEscenario = async (req: Request, res: Response) => {
     try {
       // @ts-ignore

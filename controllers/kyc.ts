@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { getUserById, updateUser } from "../service/user";
+import { ClientRequest } from "http";
 const stripe = require('stripe')(process.env.SK_TEST);
 const endpointSecret=process.env.WEBHOOKSECRET_TEST;
 
@@ -22,10 +23,11 @@ const verificationSession = await stripe.identity.verificationSessions.create({
   },
 });
 
-// Return only the client secret to the frontend.
+// // Return only the client secret to the frontend.
 const clientSecret = verificationSession.client_secret;
-// save the clientSecret asociated with an user 
-await updateUser(user.id,clientSecret,prisma);
+console.log(clientSecret)
+// // save the clientSecret asociated with an user 
+await updateUser(user.id,{clientSecret},prisma);
 return res.json({data:clientSecret})
 } catch (e) {
   console.log(e)

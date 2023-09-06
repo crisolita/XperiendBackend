@@ -25,9 +25,10 @@ router.post(
 router.get("/",getAllUsersController)
 
 
-router.post("/changePassword", changePasswordController);
-router.post("/login", userLoginController);
 router.post("/getRecovery",getRecoveryCode)
+router.post("/changePassword", changePasswordController);
+
+router.post("/login", userLoginController);
 router.post("/getAuth",validator.body(querySchemaUGetAuth),getAuthCode)
 
 export default router;

@@ -6,6 +6,8 @@ import { PrismaClient } from "@prisma/client";
 
 import userRouter from "./routes/user";
 import backOfficeRouter from "./routes/backoffice";
+import kycRouter from "./routes/kyc";
+
 
 import bodyParser from "body-parser";
 // import passport from "passport";
@@ -29,6 +31,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use("/user", userRouter);
+app.use("/kyc", kycRouter);
 app.use("/backoffice", backOfficeRouter);
 
 app.use((err:any, req:any, res:any, next:any) => {

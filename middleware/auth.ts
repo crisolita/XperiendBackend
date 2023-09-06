@@ -9,7 +9,6 @@ export function authenticateToken(
 ) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
-  console.log(authHeader)
   if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, JWT_PRIVATE_KEY as string, (err: any, user: any) => {

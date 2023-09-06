@@ -30,10 +30,21 @@ model User {
   userName       String?    @unique
   newsletter     Boolean?
   kycPassed      Boolean?
+  wallet         String?
+  clientSecret String?
   orders         Orders[]
   projects       Projects[]
+  pagos          Pagos[]
 }
-
+model Pagos {
+id             Int        @id @default(autoincrement())
+user_id Int
+monto Float
+metodo_de_pago METODODEPAGO
+concepto  String?
+fecha DateTime
+user       User      @relation(fields: [user_id], references: [id])
+}
 model Cuentas {
   id       Int        @id @default(autoincrement())
   numero   String
@@ -137,6 +148,12 @@ enum TipoDeUser {
 REGULAR
 PREMIUM
 PREMIUMGOLD
+}
+enum METODODEPAGO {
+  TRANSFERENCIA_BANCARIA
+  USDT
+  BUSD
+  TARJETA_DE_CREDITO
 }
 enum Estado {
   NUEVO

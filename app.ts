@@ -8,15 +8,34 @@ import userRouter from "./routes/user";
 import backOfficeRouter from "./routes/backoffice";
 import kycRouter from "./routes/kyc";
 
+import passport from "passport";
 
 import bodyParser from "body-parser";
-// import passport from "passport";
-
+import session from "express-session";
+const clientID= process.env.CLIENT_ID_DOCUSIGN;
+const clientSecret= process.env.CLIENT_SECRET_DOCUSIGN;
+const OAuth2Strategy = require('passport-oauth2').Strategy;
 dotenv.config();
 
 const prisma = new PrismaClient();
 const app: Express = express();
 const port = process.env.PORT || 3000;
+
+// passport.use('docusign', new OAuth2Strategy({
+//   authorizationURL: 'https://account-d.docusign.com/oauth/auth',
+//   tokenURL: 'https://account-d.docusign.com/oauth/token',
+//   clientID: clientID,
+//   clientSecret: clientSecret,
+//   callbackURL: 'http://localhost:3000/backoffice/callback' // URL de redirección después de la autenticación
+// },
+// (accessToken:string, refreshToken:string, profile:any, done:any) => {
+// console.log(accessToken,refreshToken)
+//   return done(null, profile);
+// }));
+
+
+
+
 
 app.use(cors());
 // app.use(morgan("tiny"));
@@ -29,7 +48,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   req.prisma = prisma;
   next();
 });
-
+app.use(session({
+  secret: process.env.CLIENT_SECRET_DOCUSIGN? process.env.CLIENT_SECRET_DOCUSIGN:"", // Cambia esto a una cadena secreta segura
+  resave: false,
+  saveUninitialized: true,
+}));
 app.use("/user", userRouter);
 app.use("/kyc", kycRouter);
 app.use("/backoffice", backOfficeRouter);

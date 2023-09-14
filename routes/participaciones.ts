@@ -8,9 +8,6 @@ const router = express.Router();
 // router.post("/compra-participacion", authenticateToken, compraParticipacionStripe);
 
 
-
-
-
 export default router;
 
 

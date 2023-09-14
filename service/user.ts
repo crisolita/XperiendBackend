@@ -44,4 +44,11 @@ export const updateUser = async (
     },
   });
 };
-
+export const getKycInfoByUser = async (
+  id:number,
+  prisma: PrismaClient
+)=>{
+  return await prisma.kycInfo.findUnique({
+    where: { user_id: id },
+  });
+}

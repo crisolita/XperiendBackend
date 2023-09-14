@@ -4,6 +4,9 @@ import { deleteImageAWS, getImage, uploadImage } from "../service/aws";
 import fetch from "node-fetch";
 import { getProjectById, updateEscenario, updateFechas, updateProject } from "../service/backoffice";
 import moment from "moment";
+import { getOrderById, updateOrder } from "../service/participaciones";
+import { crearPago } from "../service/pagos";
+import { crearDocumentoDeCompra } from "../service/pandadoc";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -203,12 +206,12 @@ export const convertFullName = (str: string) =>
       const {
         project_id,
         numero,
-        banco
+        banco,concepto_bancario
       }= req.body;
       let cuenta;
         const exist= await prisma.cuentas.findMany({where:{numero:numero,banco:banco}})
         if(exist) {
-         cuenta=await updateProject(project_id,{cuenta_id:exist[0].id},prisma)
+         cuenta=await updateProject(project_id,{cuenta_id:exist[0].id,concepto_bancario},prisma)
         } else {
            const newCuenta=await prisma.cuentas.create({
             data:{
@@ -216,7 +219,7 @@ export const convertFullName = (str: string) =>
               banco
             }
           })
-          cuenta=await updateProject(project_id,{cuenta_id:newCuenta.id},prisma)
+          cuenta=await updateProject(project_id,{cuenta_id:newCuenta.id,concepto_bancario},prisma)
         }
 
       return res.status(200).json({ data: cuenta});
@@ -347,6 +350,49 @@ export const manageSaleUser = async (req: Request, res: Response) => {
   }
 };
   
+/// gestion de pagos por transferencia bancaria 
+ //endpoint que va a llamar el admin
+ export const cambiarStatusDeTransferencia = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+         // @ts-ignore
+  const USER= req.user as User;
+    const {order_id,success}= req.body;
+    const order= await getOrderById(order_id,prisma)
+    if(!order) return res.status(404).json({error:"Orden no encontrada"})
+    const project= await getProjectById(order.project_id,prisma)
+    if(success) {
+        if(order?.tipo!=="COMPRA" || !project || !project.precio_unitario) return res.status(400).json({error:"No es una transaccion de venta"})
+    
+        const pago = await crearPago(USER.id,project.precio_unitario,"TRANSFERENCIA_BANCARIA",new Date(),"Compra de participacion",prisma)
+        const documentID= await crearDocumentoDeCompra(USER.id,project.id,prisma)
+        const newOrder= await updateOrder(order.id,{documentId:documentID,status:"POR_FIRMAR"},prisma)
+        return res.status(200).json({ data:{pago,newOrder} });
 
+    } else  {
+      const newOrder= await updateOrder(order.id,{status:"ERROR_EN_PAGO"},prisma)
+      return res.status(200).json({ data:{newOrder} });
 
+    }
+  } catch ( error) {
+    console.log(error)
+    res.status(500).json( error );
+  }
+};
+ 
 
+export const sentDocuement = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+         // @ts-ignore
+  
+        const documentID= await crearDocumentoDeVenta(1,1,prisma)
+  
+  } catch ( error) {
+    console.log(error)
+    res.status(500).json( error );
+  }
+};
+ 

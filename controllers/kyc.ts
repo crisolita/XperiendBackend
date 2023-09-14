@@ -7,28 +7,33 @@ const endpointSecret=process.env.WEBHOOKSECRET_TEST;
 
 
 
-export const createVerifySession= async (req:Request,res: Response) => {
+export const submitKYC= async (req:Request,res: Response) => {
 try {
    // @ts-ignore
    const prisma = req.prisma as PrismaClient;
    // @ts-ignore
    const USER = req.user as User;
+   const {nombre,apellido,pais,fecha_nacimiento,estado_civil,profesion,DNI,telefono,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
    const user= await getUserById(USER.id,prisma)
    if(!user) return res.json({error: "User no encontrado"})
-// Create the session.
-const verificationSession = await stripe.identity.verificationSessions.create({
-  type: 'document',
-  metadata: {
-    user_id: user.id,
-  },
-});
 
-// // Return only the client secret to the frontend.
-const clientSecret = verificationSession.client_secret;
-console.log(clientSecret)
-// // save the clientSecret asociated with an user 
-await updateUser(user.id,{clientSecret},prisma);
-return res.json({data:clientSecret})
+   const info= await prisma.kycInfo.create({
+    data:{
+      user_id:user.id,
+      nombre,
+      apellido,
+      pais,
+      fecha_nacimiento,
+      estado_civil,
+      profesion,
+      DNI,
+      telefono,
+      wallet,
+      status:"PENDIENTE"
+    }
+   })
+   // hacer loop para subirlas a ipfs y guardar la data 
+
 } catch (e) {
   console.log(e)
   res.status(500).json({error:e})

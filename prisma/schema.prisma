@@ -21,122 +21,154 @@ model Admins {
 }
 
 model User {
-  id             Int        @id @default(autoincrement())
-  email          String     @unique
-  password       String?
-  authToken      String?
-  referallFriend String?
-  googleID       String?    @unique
-  userName       String?    @unique
-  newsletter     Boolean?
-  kycPassed      Boolean?
-  wallet         String?
-  clientSecret String?
-  orders         Orders[]
-  projects       Projects[]
-  pagos          Pagos[]
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  password         String?
+  authToken        String?
+  referallFriend   String?
+  googleID         String?   @unique
+  userName         String?   @unique
+  newsletter       Boolean?
+  kycPassed        Boolean?
+  wallet           String?
+  clientSecret     String?
+  orders    Orders[]
+  projects  Projects[]
+  pagos     Pagos[]
+  kycInfo KycInfo? 
 }
+model KycInfo {
+  id               Int       @id @default(autoincrement())
+  user_id          Int  @unique
+  nombre           String
+  apellido         String
+  pais             String
+  fecha_nacimiento DateTime
+  estado_civil     String
+  profesion        String
+  DNI              String
+  telefono         Int
+  status           StatusKYC
+  motivo_rechazo   String?
+  wallet String
+  kycImages KycImages[]
+  user           User         @relation(fields: [user_id], references: [id])
+}
+
 model Pagos {
-id             Int        @id @default(autoincrement())
-user_id Int
-monto Float
-metodo_de_pago METODODEPAGO
-concepto  String?
-fecha DateTime
-user       User      @relation(fields: [user_id], references: [id])
+  id             Int          @id @default(autoincrement())
+  user_id        Int
+  monto          Float
+  metodo_de_pago METODODEPAGO
+  concepto       String?
+  fecha          DateTime
+  user           User         @relation(fields: [user_id], references: [id])
 }
+
 model Cuentas {
   id       Int        @id @default(autoincrement())
   numero   String
   banco    String
   projects Projects[]
 }
+
 model Escenario_economico {
-id                          Int             @id @default(autoincrement())
-project_id  Int
-escenario   Escenario?
-aporte_inversores Float?
-beneficio Float?
-rentabilidad  Float?
-coste_activo  Float?
-costo_construccion  Float?
-gestion_xperiend  Float?
-coste_desarrollo  Float?
-coste_promocion Float? 
-recursion  Float?
-project    Projects @relation(fields: [project_id], references: [id])
-}
-model Gestion_fechas {
-  id                          Int             @id @default(autoincrement())
-project_id  Int @unique
-fecha_proximamente          DateTime?
-fecha_publico               DateTime?
-fecha_abierto               DateTime?
-fecha_cerrado               DateTime?
-fecha_en_proceso            DateTime?
-fecha_reinversion           DateTime?
-fecha_terminado             DateTime?
-project    Projects @relation(fields: [project_id], references: [id])
-}
-model UserManage {
-  id                          Int             @id @default(autoincrement())
-  project_id Int
-  tipoDeUser TipoDeUser
-  openingDate DateTime?
-  minXRENwallet Int?
-  minXRENstake Int?
-  project    Projects @relation(fields: [project_id], references: [id])
-}
-model Projects {
-  id                          Int             @id @default(autoincrement())
-  titulo                      String
-  cantidadInicial             Int?
-  cantidadRestante            Int?
-  precio_unitario              Float?
-  beneficioPorNFT Float?
-  proyectoReinversion Int?
-  creator_id                  Int?            @unique
-  estado                      Estado?
-  ubicacion                   String?
-  plazo_ejecucion Int?
-  ejecucion_proyecto Float?
-  rentabilidad_estimada Float?
-  beneficio_estimado Float?
-  concepto_bancario           String?
-  cuenta_id                   Int?
-  count_image                 Int?
-  description                 String?
-  resumen                     String?
-  definicion                  String?
-  recuperar_dinero_info       String?
-  images                      ProjectImages[]
-  cuenta                      Cuentas?         @relation(fields: [cuenta_id], references: [id])
-  users                       User[]
-  Orders                      Orders[]
-  Escenarios_economicos Escenario_economico[]
-  Gestion_fechas Gestion_fechas?
-  userManage UserManage[]
+  id                 Int        @id @default(autoincrement())
+  project_id         Int
+  escenario          Escenario?
+  aporte_inversores  Float?
+  beneficio          Float?
+  rentabilidad       Float?
+  coste_activo       Float?
+  costo_construccion Float?
+  gestion_xperiend   Float?
+  coste_desarrollo   Float?
+  coste_promocion    Float?
+  recursion          Float?
+  project            Projects   @relation(fields: [project_id], references: [id])
 }
 
+model Gestion_fechas {
+  id                 Int       @id @default(autoincrement())
+  project_id         Int       @unique
+  fecha_proximamente DateTime?
+  fecha_publico      DateTime?
+  fecha_abierto      DateTime?
+  fecha_cerrado      DateTime?
+  fecha_en_proceso   DateTime?
+  fecha_reinversion  DateTime?
+  fecha_terminado    DateTime?
+  project            Projects  @relation(fields: [project_id], references: [id])
+}
+
+model UserManage {
+  id            Int        @id @default(autoincrement())
+  project_id    Int
+  tipoDeUser    TipoDeUser
+  openingDate   DateTime?
+  minXRENwallet Int?
+  minXRENstake  Int?
+  project       Projects   @relation(fields: [project_id], references: [id])
+}
+
+model Projects {
+  id                    Int                   @id @default(autoincrement())
+  titulo                String
+  cantidadInicial       Int?
+  cantidadRestante      Int?
+  precio_unitario       Float?
+  beneficioPorNFT       Float?
+  proyectoReinversion   Int?
+  creator_id            Int?                  @unique
+  estado                Estado?
+  ubicacion             String?
+  plazo_ejecucion       Int?
+  ejecucion_proyecto    Float?
+  rentabilidad_estimada Float?
+  beneficio_estimado    Float?
+  concepto_bancario     String?
+  cuenta_id             Int?
+  count_image           Int?
+  description           String?
+  resumen               String?
+  definicion            String?
+  recuperar_dinero_info String?
+  images                ProjectImages[]
+  cuenta                Cuentas?              @relation(fields: [cuenta_id], references: [id])
+  users                 User[]
+  Orders                Orders[]
+  Escenarios_economicos Escenario_economico[]
+  Gestion_fechas        Gestion_fechas?
+  userManage            UserManage[]
+}
 
 model ProjectImages {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   project_id Int
-  path       String   @unique
-  rol         RolImage?
-  project    Projects @relation(fields: [project_id], references: [id])
+  path       String    @unique
+  rol        RolImage?
+  project    Projects  @relation(fields: [project_id], references: [id])
+}
+
+model KycImages {
+  info_id Int       @id
+  path    String    @unique
+  rol     RolImage
+  kycInfo    KycInfo      @relation(fields: [info_id], references: [id])
 }
 
 model Orders {
-  id         Int       @id @default(autoincrement())
-  tipo       Tipo
-  user_id    Int
-  project_id Int
-  status     EstadoPago
-  nft_id     Int?
-  nft        NFT?      @relation(fields: [nft_id], references: [id])
-  project    Projects? @relation(fields: [project_id], references: [id])
-  user       User      @relation(fields: [user_id], references: [id])
+  id          Int              @id @default(autoincrement())
+  tipo        Tipo
+  user_id     Int
+  project_id  Int
+  status      EstadoPagoYFirma
+  document_id String?
+  fecha       DateTime?
+  nft_id      Int?
+  nft         NFT?             @relation(fields: [nft_id], references: [id])
+  project     Projects?        @relation(fields: [project_id], references: [id])
+  user        User             @relation(fields: [user_id], references: [id])
 }
 
 model NFT {
@@ -144,17 +176,26 @@ model NFT {
   txHash String
   orders Orders[]
 }
-enum TipoDeUser {
-REGULAR
-PREMIUM
-PREMIUMGOLD
+
+enum StatusKYC {
+  APROBADO
+  RECHAZADO
+  PENDIENTE
 }
+
+enum TipoDeUser {
+  REGULAR
+  PREMIUM
+  PREMIUMGOLD
+}
+
 enum METODODEPAGO {
   TRANSFERENCIA_BANCARIA
   USDT
   BUSD
   TARJETA_DE_CREDITO
 }
+
 enum Estado {
   NUEVO
   PROXIMAMENTE
@@ -164,16 +205,22 @@ enum Estado {
   CERRADO
   TERMINADO
 }
+
 enum RolImage {
   PRINCIPAL
   NFT
   GALERIA
+  DNIFRONTAL
+  DNITRASERA
+  USERDNI
 }
+
 enum Escenario {
   CONSERVADOR
   MODERADO
   FAVORABLE
 }
+
 enum Tipo {
   COMPRA
   VENTA
@@ -181,9 +228,11 @@ enum Tipo {
   RECLARMAR
   REINVERSION
 }
-enum EstadoPago {
-  PAGADO_Y_ENTREGADO
+
+enum EstadoPagoYFirma {
+  PAGADO_Y_ENTREGADO_Y_FIRMADO
   PAGO_PENDIENTE
   ERROR_EN_PAGO
-  POR_ENTREGAR
+  POR_FIRMAR
+  FIRMADO_POR_ENTREGAR
 }

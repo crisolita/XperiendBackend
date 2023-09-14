@@ -31,3 +31,12 @@ export async function sendWelcomeEmail(email: string,referallCode:string) {
   };
   return transporter.sendMail(mailData);
 }
+export async function sendCompraTransferenciaEmail(email: string,numeroDecuenta:string,banco:string,monto:number,name:string,concepto:string) {
+  const mailData = {
+    from: process.env.EMAILADDRESS, // sender address
+    to: email, // list of receivers
+    subject: "Compra de participacion, pago pendiente",
+    html: `<h2 style="color:#23262F;">Pago pendiente compra de participación en el proyecto ${name}.</h2><h3 style="color:#6E7786;">Para proceder con la compra de la participacion es necesario que realice una transferencia bancaria a la siguiente cuenta cuyo banco es ${banco} y el numero de cuenta ${numeroDecuenta}, por la cantidad de ${monto} y el concepto: ${concepto}</h3>`,
+  };
+  return transporter.sendMail(mailData);
+}

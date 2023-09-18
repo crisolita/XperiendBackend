@@ -3,14 +3,23 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { createJWT } from "../utils/utils";
 import {
+  createUsername,
   findUsername,
   getAllUsers,
   getUserByEmail,
+  getUserByGoogleID,
+  getUserById,
   updateUser,
 
 } from "../service/user";
 import { sendAuthEmail, sendWelcomeEmail } from "../service/mail";
-
+import { OAuth2Client } from 'google-auth-library';
+import axios from "axios";
+const client = new OAuth2Client({
+  clientId: process.env.CLIENT_ID_GOOGLE,
+  clientSecret: process.env.CLIENT_SECRET_GOOGLE,
+  redirectUri: 'https://localhost:3000',
+});
 
 
 export const convertFullName = (str: string) =>
@@ -74,35 +83,36 @@ export const userRegisterController = async (req: Request, res: Response) => {
     res.status(500).json({error:error})
   }
 };
-// export const userRegisterGoogle = async (req: Request, res: Response) => {
-//   try {
-//     const salt = bcrypt.genSaltSync();
-//     // @ts-ignore
-//     const oauth2Client = new google.auth.OAuth2(
-//       process.env.CLIENT_ID,
-//       process.env.CLIENT_SECRET,
-//       `https://localhost:3000`,
-//     );
-//     const {tokens}=req?.body
-//     const scopes = [
-//       'https://www.googleapis.com/auth/userinfo.profile',
-//       'https://www.googleapis.com/auth/userinfo.email',
-//     ];
-
-//     const URL= oauth2Client.generateAuthUrl({
-//       access_type: 'online',
-//       prompt: 'consent',
-//       scope: scopes, // If you only need one scope you can pass it as string
-//     });
-
-//         res.status(200).json(
-//         { data: {URL} }
-//       );
-//       } catch ( error ) {
-//     console.log(error)
-//     res.status(500).json({error:error})
-//   }
-// };
+export const userGoogleController = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const {token}=req.body
+   
+    const userInfoUrl = `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${token}`;
+    const response = await axios.get(userInfoUrl);
+    const userName= await createUsername(response.data.given_name,response.data.family_name,prisma)
+    if(!response.data || !response.data.verified_email || !userName) return res.status(400).json({error:"Invalid Token"})
+    const exist= await getUserByGoogleID(response.data.id,prisma)
+    let user;
+    if(!exist ) {
+      console.log("noo existo")
+      user= await prisma.user.create({data:{
+        email:response.data.email,
+        googleID:response.data.id,
+        userName:userName
+      }})
+      await sendWelcomeEmail(user.email,userName);
+      res.status(200).json({email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,  token: createJWT(user)});
+    } else if (exist.email==response.data.email){
+      console.log("existo")
+      res.status(200).json({email:exist.email,userid:exist.id,userName:exist.userName,referallFriend:exist.referallFriend,  token: createJWT(user)});
+    }    
+      } catch ( error ) {
+    console.log(error)
+    res.status(500).json({error:error})
+  }
+};
 
 
 export const userLoginController = async (req: Request, res: Response) => {
@@ -202,4 +212,28 @@ export const changePasswordController = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error });
   }
 };
+export const changeNewsletter = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;
+    
+    const user= await getUserById(USER.id,prisma)
+    let userUpdate;
+    if(user?.newsletter) {
+      userUpdate=await updateUser(USER.id,{newsletter:false},prisma)
+    } else {
+      userUpdate=await updateUser(USER.id,{newsletter:false},prisma)
+    }
+      return res.status(200).json(
+       {
+          data: {email:user?.email,newsletter:user?.newsletter},
+        }
+      );
+  } catch(error) {
+    console.log(error)
+    return res.status(500).json({ error: error });
+  } 
+}
 

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, StatusKYC } from "@prisma/client";
 
 export const getUserById = async (id: number, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
@@ -34,7 +34,7 @@ export const findUsername = async (userName: string, prisma: PrismaClient) => {
 
 export const updateUser = async (
   id: number,
-  data: { email?: string; password?: string; clientSecret?: string,authToken?:string,},
+  data: { email?: string; password?: string; clientSecret?: string,authToken?:string,newsletter?:boolean},
   prisma: PrismaClient
 ) => {
   return await prisma.user.update({
@@ -52,3 +52,35 @@ export const getKycInfoByUser = async (
     where: { user_id: id },
   });
 }
+export const updateKyc = async (
+  id: number,
+  data: { nombre?:string,status?:StatusKYC,motivo_rechazo?:string,apellido?:string,pais?:string,fecha_nacimiento?:Date,estado_civil?:string,profesion?:string,DNI?:string,telefono?:string,wallet?:string},
+  prisma: PrismaClient
+) => {
+  return await prisma.kycInfo.update({
+    where: { id: id },
+    data: {
+      ...data,
+    },
+  });
+};
+
+
+export const createUsername = async (
+  given_name:string,
+  family_name:string,
+  prisma: PrismaClient
+) => {
+  let count=1;
+  let noRepeat,userName;
+  while (!noRepeat) {
+     userName=`${given_name}${family_name}${count}`
+    const exist= await prisma.user.findUnique({where:{userName}})
+    if(!exist) {
+      noRepeat=true
+    } else {
+      count++
+    }
+  }
+  return userName;
+};

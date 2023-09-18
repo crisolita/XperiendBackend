@@ -31,6 +31,15 @@ export async function sendWelcomeEmail(email: string,referallCode:string) {
   };
   return transporter.sendMail(mailData);
 }
+export async function sendThanksBuyEmail(email: string,xrenAmount:number, metodoDePago:string) {
+  const mailData = {
+    from: process.env.EMAILADDRESS, // sender address
+    to: email, // list of receivers
+    subject: "Gracias por su compra",
+    html: `<h2 style="color:#23262F;">Xperiend te da las gracias.</h2><h3 style="color:#6E7786;">Por la compra de ${xrenAmount} a traves del siguiente metodo de pago ${metodoDePago} </h3>`,
+  };
+  return transporter.sendMail(mailData);
+}
 export async function sendCompraTransferenciaEmail(email: string,numeroDecuenta:string,banco:string,monto:number,name:string,concepto:string) {
   const mailData = {
     from: process.env.EMAILADDRESS, // sender address

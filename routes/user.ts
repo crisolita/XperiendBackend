@@ -6,6 +6,8 @@ import {
   getRecoveryCode,
   getAuthCode,
   getAllUsersController,
+  userGoogleController,
+  changeNewsletter,
   
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
@@ -30,5 +32,9 @@ router.post("/changePassword", changePasswordController);
 
 router.post("/login", userLoginController);
 router.post("/getAuth",validator.body(querySchemaUGetAuth),getAuthCode)
+
+
+router.post("/googleAuth", userGoogleController);
+router.put("/changeNewsletter",authenticateToken,changeNewsletter)
 
 export default router;

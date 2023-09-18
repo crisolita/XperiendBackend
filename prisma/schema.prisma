@@ -21,25 +21,27 @@ model Admins {
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
-  password         String?
-  authToken        String?
-  referallFriend   String?
-  googleID         String?   @unique
-  userName         String?   @unique
-  newsletter       Boolean?
-  kycPassed        Boolean?
-  wallet           String?
-  clientSecret     String?
-  orders    Orders[]
-  projects  Projects[]
-  pagos     Pagos[]
-  kycInfo KycInfo? 
+  id             Int          @id @default(autoincrement())
+  email          String       @unique
+  password       String?
+  authToken      String?
+  referallFriend String?
+  googleID       String?      @unique
+  userName       String?      @unique
+  newsletter     Boolean?
+  kycPassed      Boolean?
+  wallet         String?
+  clientSecret   String?
+  orders         Orders[]
+  projects       Projects[]
+  pagos          Pagos[]
+  kycInfo        KycInfo?
+  OrdersXREN     OrdersXREN[]
 }
+
 model KycInfo {
-  id               Int       @id @default(autoincrement())
-  user_id          Int  @unique
+  id               Int         @id @default(autoincrement())
+  user_id          Int         @unique
   nombre           String
   apellido         String
   pais             String
@@ -47,18 +49,18 @@ model KycInfo {
   estado_civil     String
   profesion        String
   DNI              String
-  telefono         Int
+  telefono         String
   status           StatusKYC
   motivo_rechazo   String?
-  wallet String
-  kycImages KycImages[]
-  user           User         @relation(fields: [user_id], references: [id])
+  wallet           String
+  kycImages        KycImages[]
+  user             User        @relation(fields: [user_id], references: [id])
 }
 
 model Pagos {
   id             Int          @id @default(autoincrement())
   user_id        Int
-  monto          Float
+  montoUSD          Float
   metodo_de_pago METODODEPAGO
   concepto       String?
   fecha          DateTime
@@ -69,6 +71,7 @@ model Cuentas {
   id       Int        @id @default(autoincrement())
   numero   String
   banco    String
+  xrenAccount Boolean?
   projects Projects[]
 }
 
@@ -151,10 +154,10 @@ model ProjectImages {
 }
 
 model KycImages {
-  info_id Int       @id
-  path    String    @unique
+  info_id Int
+  path    String   @id @unique
   rol     RolImage
-  kycInfo    KycInfo      @relation(fields: [info_id], references: [id])
+  kycInfo KycInfo  @relation(fields: [info_id], references: [id])
 }
 
 model Orders {
@@ -169,6 +172,18 @@ model Orders {
   nft         NFT?             @relation(fields: [nft_id], references: [id])
   project     Projects?        @relation(fields: [project_id], references: [id])
   user        User             @relation(fields: [user_id], references: [id])
+}
+
+model OrdersXREN {
+  id          Int             @id @default(autoincrement())
+  tipo        Tipo
+  user_id     Int
+  status      StatusOrderXREN
+  unidades  Int
+  amountUSD Float
+  hash String?
+  fecha       DateTime?
+  user        User            @relation(fields: [user_id], references: [id])
 }
 
 model NFT {
@@ -227,6 +242,13 @@ enum Tipo {
   RECOMPRA
   RECLARMAR
   REINVERSION
+}
+
+enum StatusOrderXREN {
+  PAGO_PENDIENTE
+  ERROR_EN_PAGO
+  POR_ENTREGAR
+  PAGO_EXITOSO_ENTREGADO
 }
 
 enum EstadoPagoYFirma {

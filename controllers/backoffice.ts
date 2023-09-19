@@ -7,7 +7,7 @@ import moment from "moment";
 import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { crearDocumentoDeCompra } from "../service/pandadoc";
-import { getUserById, updateKyc } from "../service/user";
+import { getKycInfoByUser, getUserById, updateKyc } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract } from "../service/web3";
 import { sendThanksBuyEmail } from "../service/mail";
@@ -505,13 +505,15 @@ export const cambiarStatusDeTransferenciaParaXREN= async (req: Request, res: Res
   const order= await prisma.ordersXREN.findUnique({where:{id:order_id}})
   if(!order) return res.status(404).json({error:"Orden no encontrada"})
   const user= await getUserById(order.user_id,prisma)
-  if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
+if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
+const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
+
     let newOrder;
     if(success) {
         if(order?.tipo!=="COMPRA") return res.status(400).json({error:"No es una transaccion de compra"})
     
          pago = await crearPago(order.user_id,order.amountUSD,"TRANSFERENCIA_BANCARIA",new Date(),`Compra de ${order.unidades} XREN`,prisma)
-        const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(order.unidades.toString()),user.wallet)
+        const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(order.unidades.toString()),wallet)
 
          newOrder= await prisma.ordersXREN.update({where:{id:order.id},data:{hash:mint.hash,status:"PAGO_EXITOSO_ENTREGADO"}})
          await sendThanksBuyEmail(user.email,order.unidades,"TRANSFERENCIA_BANCARIA")

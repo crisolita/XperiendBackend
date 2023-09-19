@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { getUserById } from "../service/user";
+import { getKycInfoByUser, getUserById } from "../service/user";
 import { saleContract, validateTx } from "../service/web3";
 import {ethers} from 'ethers'
 import { createCharge } from "../service/stripe";
@@ -16,8 +16,9 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
     const USER= req.user as User;
     const {tokenAmount,cardNumber,exp_month,exp_year,cvc}= req.body;
     const user = await getUserById(USER.id, prisma)
-    if(!user?.wallet) return res.status(404).json({error:"Wallet no encontrada"})
-      
+    if(!user) return res.status(404).json({error:"User no econtrado"})
+    const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
+    if(!wallet) return res.status(404).json({error:"Wallet no econtrada"})
     const phase= await saleContract.functions.getcurrentPhase()
   
 
@@ -30,7 +31,7 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
         if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
       
        pago = await crearPago(USER.id,Number(ethers.utils.formatEther(phase[0].price))*tokenAmount,"TARJETA_DE_CREDITO",new Date(),`Compra de ${amount} XREN`,prisma)
-      const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(tokenAmount.toString()),user.wallet)
+      const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(tokenAmount.toString()),wallet)
       const order = await prisma.ordersXREN.create({
         data:{
           tipo:"COMPRA",

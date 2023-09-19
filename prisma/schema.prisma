@@ -30,7 +30,6 @@ model User {
   userName       String?      @unique
   newsletter     Boolean?
   kycPassed      Boolean?
-  wallet         String?
   clientSecret   String?
   orders         Orders[]
   projects       Projects[]

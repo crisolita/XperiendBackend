@@ -78,7 +78,7 @@ export const updateKYC= async (req:Request,res: Response) => {
      const prisma = req.prisma as PrismaClient;
      // @ts-ignore
      const USER = req.user as User;
-     const {name,lastname,country_born,birth,telf,address,document,city,postalCode,state,country,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
+     const {name,lastname,country_born,birth,telf,address,document_number,document,city,postalCode,state,country,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
      const user= await getUserById(USER.id,prisma)
      const kycAlready= await getKycInfoByUser(USER.id,prisma)
      let info;
@@ -89,16 +89,16 @@ export const updateKYC= async (req:Request,res: Response) => {
       return res.status(400).json({error:"Kyc no creado"})
      } else if(kycAlready?.status=="RECHAZADO") {
   
-    info=await updateKyc(kycAlready.id,{name,lastname,country_born,birth,telf,address,document,city,postalCode,state,country,wallet},prisma)
+    info=await updateKyc(kycAlready.id,{name,lastname,document_number,country_born,birth,telf,address,document,city,postalCode,state,country,wallet},prisma)
           if(foto_dni_frontal) {
             const path=`kyc_image_${user.id}_${info.id}_DNIFRONTAL`
-            const blob = await foto_dni_frontal.arrayBuffer()
-            await uploadImage(blob,path)
+            const data= Buffer.from(foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+            await uploadImage(data,path)
           }
           if(foto_dni_trasera) {
             const path=`kyc_image_${user.id}_${info.id}_DNITRASERA`
-            const blob = await foto_dni_trasera.arrayBuffer()
-            await uploadImage(blob,path)
+            const data= Buffer.from(foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+            await uploadImage(data,path)
           }
           return res.json({data:{info}})
      }

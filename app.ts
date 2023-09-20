@@ -13,7 +13,6 @@ import compraXrenRouter from "./routes/compraXREN";
 import passport from "passport";
 
 import bodyParser from "body-parser";
-import session from "express-session";
 const clientID= process.env.CLIENT_ID_DOCUSIGN;
 const clientSecret= process.env.CLIENT_SECRET_DOCUSIGN;
 const OAuth2Strategy = require('passport-oauth2').Strategy;

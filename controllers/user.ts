@@ -6,6 +6,7 @@ import {
   createUsername,
   findUsername,
   getAllUsers,
+  getKycInfoByUser,
   getUserByEmail,
   getUserByGoogleID,
   getUserById,
@@ -120,7 +121,7 @@ export const userLoginController = async (req: Request, res: Response) => {
     const { email, authCode } = req?.body;
     const user = await getUserByEmail(email, prisma);
     if (user ) {
-      if (bcrypt.compareSync(authCode,user.authToken? user.authToken :""))
+      if (bcrypt.compareSync(authCode,user.authToken? user.authToken :"")) 
         return res.status(200).json(
        { data: {email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend, kycPassed:user.kycPassed, token: createJWT(user)} }
         );
@@ -229,6 +230,22 @@ export const changeNewsletter = async (req: Request, res: Response) => {
           data: {email:user?.email,newsletter:user?.newsletter},
         }
       );
+  } catch(error) {
+    console.log(error)
+    return res.status(500).json({ error: error });
+  } 
+}
+
+export const getUserInfo = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;  
+    const user= await getUserById(USER.id,prisma)
+    const kycInfo=await getKycInfoByUser(USER.id,prisma)
+    const kycImages= await prisma.kycImages.findMany({where:{info_id:kycInfo?.id}})
+    return res.json({data:{kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed}})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

@@ -8,6 +8,7 @@ import {
   getAllUsersController,
   userGoogleController,
   changeNewsletter,
+  getUserInfo,
   
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
@@ -25,6 +26,8 @@ router.post(
   userRegisterController
 );
 router.get("/",getAllUsersController)
+router.get("/userInfo",authenticateToken, getUserInfo)
+
 
 
 router.post("/getRecovery",getRecoveryCode)

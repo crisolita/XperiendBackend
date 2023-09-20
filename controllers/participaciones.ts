@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { getProjectById } from "../service/backoffice";
 import moment from "moment";
 import { createCharge } from "../service/stripe";
-import { getCuentaById, getGestionByPorjectId, getOrderById } from "../service/participaciones";
+import { getCuentaById, getGestionByPorjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail } from "../service/mail";
 import {  crearDocumentoDeCompra } from "../service/pandadoc";
@@ -78,4 +78,20 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       res.status(500).json( error );
     }
   };
+
+  export const prueba = async (req: Request, res: Response) => {
+    try {
+    //   // @ts-ignore
+    //   const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    // const USER= req.user as User;
+    // await getTotalBalanceVenta("0x8068dbC41e2f1C988EB0399da5C44F43b5e646C1")
+    await getTotalBalanceStake("0x8068dbC41e2f1C988EB0399da5C44F43b5e646C1")
+    res.json("prueba")
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+
  

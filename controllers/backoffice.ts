@@ -301,9 +301,24 @@ export const convertFullName = (str: string) =>
       res.status(500).json( error );
     }
   };
+  export const updateProjectTemplateDocs = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const {
+        project_id,
+       estado
+      }= req.body;
+     
+      // return res.status(200).json({ data: });
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
 
 
-//gestion user venta 
+//gestion user venta de proyectos
 export const manageSaleUser = async (req: Request, res: Response) => {
   try {
     // @ts-ignore

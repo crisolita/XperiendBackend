@@ -1,5 +1,7 @@
 import {  EstadoPagoYFirma, PrismaClient } from "@prisma/client";
-import { StakeContract, XRENContract } from "./web3";
+import { StakeContract, XRENContract, saleContract } from "./web3";
+import { ethers } from "ethers";
+import { getProjectById } from "./backoffice";
 
 
 
@@ -79,15 +81,40 @@ export const updateProject = async (
   });
 };
 
+export const getTotalBalanceVenta= async(wallet:string) =>{
+  let balanceContract=0;
+  const balanceXRENWallet= await XRENContract.functions.balanceOf(wallet)
+  const ids= await saleContract.functions.getIDs(wallet)
 
-export const getFechaDeVentaInicial= async (wallet:string,project_id:number,prisma:PrismaClient) => {
-const balanceXREN= await XRENContract.functions.balanceOf(wallet)
-const idStake= await StakeContract.functions.currentIdStake()
-const isInStake= await StakeContract.functions.isUserInStake(wallet,idStake)
-let balanceStake=0;
-if(isInStake) {
- balanceStake=(await StakeContract.functions.infoStakeByUser(idStake,wallet)).balance;
-} else {
-
+  for (let i=0;i<ids[0].length;i++) {
+    balanceContract+=Number(ethers.utils.formatEther(await saleContract.showMyRemainAmount(Number(ids[0][i]))))
+    console.log(balanceContract)
+  }
+    return balanceContract+  Number(ethers.utils.formatEther(balanceXRENWallet.toString()))
+  
 }
+export const getTotalBalanceStake= async(wallet:string) =>{
+  let balanceStake=0,isInStake;
+  const idStake= await StakeContract.functions.currentIdStake()
+  let i=1
+  while(i<=idStake) {
+    isInStake= await StakeContract.functions.isUserInStake(wallet,i)
+    if(isInStake[0]==true) {
+      balanceStake+=Number(ethers.utils.formatEther((await StakeContract.functions.infoStakeByUser(i,wallet))[0].balance.toString()))
+    }
+    i++
+  }
+  console.log(balanceStake)
+  return balanceStake
+}
+export const getFechaDeVentaInicial= async (wallet:string,project_id:number,prisma:PrismaClient) => {
+const XRENBALANCE=await getTotalBalanceVenta(wallet);
+const XRENSTAKE= await getTotalBalanceStake(wallet)
+const normalUser= await prisma.userManage.findFirst({where:{project_id,tipoDeUser:"REGULAR"}})
+const premiumUser= await prisma.userManage.findFirst({where:{project_id,tipoDeUser:"PREMIUM"}})
+const goldPremiumUser= await prisma.userManage.findFirst({where:{project_id,tipoDeUser:"PREMIUMGOLD"}})
+if(goldPremiumUser && XRENBALANCE>=goldPremiumUser?.minXRENwallet && XRENSTAKE>=(goldPremiumUser?.minXRENstake?goldPremiumUser?.minXRENstake: 0)) return goldPremiumUser.openingDate 
+else if (premiumUser && XRENBALANCE>=premiumUser?.minXRENwallet && XRENSTAKE>=(premiumUser?.minXRENstake?premiumUser?.minXRENstake: 0)) return premiumUser.openingDate 
+else if(normalUser && XRENBALANCE>=normalUser?.minXRENwallet && XRENSTAKE>=(normalUser?.minXRENstake?normalUser?.minXRENstake: 0)) return normalUser.openingDate
+
 }

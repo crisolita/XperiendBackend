@@ -23,14 +23,7 @@ export const querySchemaUGetAuth = Joi.object({
     .required().messages({'string.default':"El email debe ser valido"}),
 });
 export const querySchemaKYC = Joi.object({
-  FirstName: Joi.string().required(),
-  LastName: Joi.string().required(),
-  Birthday: Joi.date().timestamp("unix"),
-  Nationality: Joi.string().required(),
-  CountryOfResidence: Joi.string().required(),
-  Email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
-    .required(),
-  Occupation: Joi.string().required(),
-  Address: Joi.string().required(),
+  name:Joi.string(),lastname:Joi.string(),country_born:Joi.string(),birth:Joi.string(),telf:Joi.string(),address:Joi.string(),document:Joi.string(),document_number:Joi.string(),city:Joi.string(),postalCode:Joi.number(),state:Joi.string(),country:Joi.string(),foto_dni_frontal:Joi.string(),foto_dni_trasera:Joi.string(),wallet:Joi.string()
 });
+
+

@@ -50,11 +50,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   req.prisma = prisma;
   next();
 });
-app.use(session({
-  secret: process.env.CLIENT_SECRET_DOCUSIGN? process.env.CLIENT_SECRET_DOCUSIGN:"", // Cambia esto a una cadena secreta segura
-  resave: false,
-  saveUninitialized: true,
-}));
+
 app.use("/user", userRouter);
 app.use("/kyc", kycRouter);
 app.use("/backoffice", backOfficeRouter);

@@ -144,14 +144,15 @@ export const convertFullName = (str: string) =>
       // @ts-ignore
       const prisma = req.prisma as PrismaClient;
       const {
-        project_id,
-        fecha_proximamente,
-        fecha_publico,
-        fecha_abierto,
-        fecha_cerrado,
-        fecha_en_proceso,
-        fecha_reinversion,
-        fecha_terminado
+        project_id,       
+        fecha_inicio_reinversion,
+        fecha_fin_reinversion,
+        fecha_reclamo,
+        fecha_inicio_intercambio,
+        fecha_fin_intercambio,
+        visible_user,
+        visible_premium,
+        visible_gold
       }= req.body;
       let fechas;
         const exist= await prisma.gestion_fechas.findUnique({where:{project_id:project_id}})
@@ -161,13 +162,14 @@ export const convertFullName = (str: string) =>
           fechas= await prisma.gestion_fechas.create({
             data:{
               project_id,
-              fecha_proximamente:fecha_proximamente?new Date(fecha_proximamente): null,
-              fecha_publico:fecha_publico?new Date(fecha_publico):null,
-              fecha_abierto:fecha_abierto?new Date(fecha_publico):null,
-              fecha_cerrado:fecha_cerrado?new Date(fecha_cerrado):null,
-              fecha_en_proceso:fecha_en_proceso?new Date(fecha_en_proceso):null,
-              fecha_reinversion:fecha_reinversion?new Date(fecha_reinversion):null,
-              fecha_terminado:fecha_terminado?new Date(fecha_terminado):null
+              fecha_inicio_reinversion,
+          fecha_fin_reinversion,
+        fecha_reclamo,
+        fecha_inicio_intercambio,
+        fecha_fin_intercambio,
+        visible_user,
+        visible_premium,
+        visible_gold
             }
           })
         }

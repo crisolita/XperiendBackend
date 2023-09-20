@@ -41,14 +41,18 @@ model User {
 model KycInfo {
   id               Int         @id @default(autoincrement())
   user_id          Int         @unique
-  nombre           String
-  apellido         String
-  pais             String
-  fecha_nacimiento DateTime
-  estado_civil     String
-  profesion        String
-  DNI              String
-  telefono         String
+  name String
+  lastname String
+  country_born String
+  birth DateTime
+  document String
+  telf String
+  address String
+  city String
+  postalCode Int
+  state String
+  document_number String
+  country String
   status           StatusKYC
   motivo_rechazo   String?
   wallet           String
@@ -93,13 +97,15 @@ model Escenario_economico {
 model Gestion_fechas {
   id                 Int       @id @default(autoincrement())
   project_id         Int       @unique
-  fecha_proximamente DateTime?
-  fecha_publico      DateTime?
-  fecha_abierto      DateTime?
-  fecha_cerrado      DateTime?
-  fecha_en_proceso   DateTime?
-  fecha_reinversion  DateTime?
-  fecha_terminado    DateTime?
+  fecha_inicio_intercambio DateTime?
+  fecha_fin_intercambio DateTime?
+  fecha_reclamo DateTime?
+  fecha_inicio_reinversion  DateTime?
+  fecha_fin_reinversion DateTime?
+  fecha_fin_venta DateTime?
+  visible_user Boolean?
+  visible_premium Boolean?
+  visible_gold Boolean?
   project            Projects  @relation(fields: [project_id], references: [id])
 }
 

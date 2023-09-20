@@ -38,8 +38,8 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,pris
             recipients: [
               {
                 email: user.email,
-                firstName: kycInfo?.nombre,
-                lastName: kycInfo?.apellido,
+                firstName: kycInfo?.name,
+                lastName: kycInfo?.lastname,
                 role:"Client",
                 signingOrder: 1,
               }
@@ -51,11 +51,11 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,pris
               },
               {
                   "name": "Client.FirstName",
-                  "value": `${kycInfo?.nombre}`
+                  "value": `${kycInfo?.name}`
               },
               {
                   "name": "Client.LastName",
-                  "value": `${kycInfo?.apellido}`
+                  "value": `${kycInfo?.lastname}`
               },
               {
                 "name": "project.name",

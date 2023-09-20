@@ -1,4 +1,5 @@
 import {  EstadoPagoYFirma, PrismaClient } from "@prisma/client";
+import { StakeContract, XRENContract } from "./web3";
 
 
 
@@ -20,13 +21,14 @@ export const getOrderById = async (id: number, prisma: PrismaClient) => {
 export const updateFechas = async (
   id: number,
   data: {  
-    fecha_proximamente?:Date,
-    fecha_publico?:Date,
-    fecha_abierto?:Date,
-    fecha_cerrado?:Date,
-    fecha_en_proceso?:Date,
-    fecha_reinversion?:Date,
-    fecha_terminado?:Date
+    fecha_inicio_reinversion?:Date,
+        fecha_fin_reinversion?:Date,
+        fecha_reclamo?:Date,
+        fecha_inicio_intercambio?:Date,
+        fecha_fin_intercambio?:Date
+        visible_user?:boolean,
+        visible_premium?:boolean,
+        visible_gold?:boolean
    },
   prisma: PrismaClient
 ) => {
@@ -76,25 +78,16 @@ export const updateProject = async (
     },
   });
 };
-// export const crearDocumentoDeCompra = async (
-//   user_id: number,
-//   project_id:number,
-//   prisma:PrismaClient
-// ) => {
-//   const project= await getProjectById(project_id,prisma)
-//   const user= await getUserById(user_id,prisma)
-//   const doc = new PDFDocument();
-// const path=`Contrato_de_compra_${project_id}_${user_id}.pdf`
-// doc.pipe(fs.createWriteStream(path));
-
-// // Agregar texto e imagen del código QR al PDF
-// doc.fontSize(18).text('Documento de compra', { align: 'center' });
-// doc.text(`Proyecto: ${project?.titulo}`);
-// doc.text(`usuario: ${user?.userName}`);
-// doc.text(`Fecha: ${new Date()}`);
-// doc.text(`Costo de la participacion: ${project?.precio_unitario}`);
-// return doc;
-// };
-// Crear un nuevo documento PDF
 
 
+export const getFechaDeVentaInicial= async (wallet:string,project_id:number,prisma:PrismaClient) => {
+const balanceXREN= await XRENContract.functions.balanceOf(wallet)
+const idStake= await StakeContract.functions.currentIdStake()
+const isInStake= await StakeContract.functions.isUserInStake(wallet,idStake)
+let balanceStake=0;
+if(isInStake) {
+ balanceStake=(await StakeContract.functions.infoStakeByUser(idStake,wallet)).balance;
+} else {
+
+}
+}

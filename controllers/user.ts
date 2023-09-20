@@ -96,7 +96,6 @@ export const userGoogleController = async (req: Request, res: Response) => {
     const exist= await getUserByGoogleID(response.data.id,prisma)
     let user;
     if(!exist ) {
-      console.log("noo existo")
       user= await prisma.user.create({data:{
         email:response.data.email,
         googleID:response.data.id,
@@ -105,7 +104,6 @@ export const userGoogleController = async (req: Request, res: Response) => {
       await sendWelcomeEmail(user.email,userName);
       res.status(200).json({email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,kycPaseed:user.kycPassed,  token: createJWT(user)});
     } else if (exist.email==response.data.email){
-      console.log("existo")
       res.status(200).json({email:exist.email,userid:exist.id,userName:exist.userName,referallFriend:exist.referallFriend,kycPassed:exist.kycPassed,  token: createJWT(user)});
     }    
       } catch ( error ) {

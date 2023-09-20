@@ -54,7 +54,7 @@ export const getKycInfoByUser = async (
 }
 export const updateKyc = async (
   id: number,
-  data: { nombre?:string,status?:StatusKYC,motivo_rechazo?:string,apellido?:string,pais?:string,fecha_nacimiento?:Date,estado_civil?:string,profesion?:string,DNI?:string,telefono?:string,wallet?:string},
+  data: { status?:StatusKYC,document_number?:string,motivo_rechazo?:string,name?:string,lastname?:string,country_born?:string,birth?:Date,telf?:string,address?:string,document?:string,city?:string,postalCode?:number,state?:string,country?:string,wallet?:string},
   prisma: PrismaClient
 ) => {
   return await prisma.kycInfo.update({

@@ -31,13 +31,14 @@ export const getProjectById = async (id: number, prisma: PrismaClient) => {
 export const updateFechas = async (
   id: number,
   data: {  
-    fecha_proximamente?:Date,
-    fecha_publico?:Date,
-    fecha_abierto?:Date,
-    fecha_cerrado?:Date,
-    fecha_en_proceso?:Date,
-    fecha_reinversion?:Date,
-    fecha_terminado?:Date
+    fecha_inicio_reinversion?:Date,
+    fecha_fin_reinversion?:Date,
+    fecha_reclamo?:Date,
+    fecha_inicio_intercambio?:Date,
+    fecha_fin_intercambio?:Date,
+    visible_user?:boolean,
+    visible_premium?:boolean,
+    visible_gold?:boolean
    },
   prisma: PrismaClient
 ) => {

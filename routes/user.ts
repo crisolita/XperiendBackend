@@ -13,7 +13,7 @@ import {
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
 import { authenticateToken } from "../middleware/auth";
-import { isAdmin } from "../middleware/isAdmin";
+import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { querySchemaRegistro, querySchemaUGetAuth } from "../middleware/validation";
 const validator = Joivalidator.createValidator({passError: true});
 

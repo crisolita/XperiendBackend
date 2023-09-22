@@ -5,7 +5,7 @@ import { getProjectById } from "./backoffice";
 
 
 
-export const getGestionByPorjectId = async (id: number, prisma: PrismaClient) => {
+export const getGestionByProjectId = async (id: number, prisma: PrismaClient) => {
   return await prisma.gestion_fechas.findUnique({
     where: { project_id: id },
   });
@@ -88,7 +88,6 @@ export const getTotalBalanceVenta= async(wallet:string) =>{
 
   for (let i=0;i<ids[0].length;i++) {
     balanceContract+=Number(ethers.utils.formatEther(await saleContract.showMyRemainAmount(Number(ids[0][i]))))
-    console.log(balanceContract)
   }
     return balanceContract+  Number(ethers.utils.formatEther(balanceXRENWallet.toString()))
   
@@ -104,7 +103,6 @@ export const getTotalBalanceStake= async(wallet:string) =>{
     }
     i++
   }
-  console.log(balanceStake)
   return balanceStake
 }
 export const getFechaDeVentaInicial= async (wallet:string,project_id:number,prisma:PrismaClient) => {

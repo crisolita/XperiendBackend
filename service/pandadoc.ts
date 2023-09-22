@@ -85,3 +85,19 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,pris
           }
     }
 }
+export const getTemplates= async () => {
+return apiInstanceTemplate.listTemplates()
+}
+export const isValidTemplate= async (id:string) => {
+  const data= (await apiInstanceTemplate.listTemplates()).results
+  if(!data) return false
+  for (const elemento of data) {
+    if (elemento.id === id) {
+      return true; // El ID se encontró en la tabla
+    }
+  }
+  return false; // El ID no se encontró en la tabla
+}
+
+  
+

@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_PRIVATE_KEY } from "../utils/utils";
+import { getKycInfoByUser } from "../service/user";
 
-export function isAdmin(req: Request, res: Response, next: NextFunction) {
+export function isKycRequired(req: Request, res: Response, next: NextFunction) {
   // @ts-ignore
   const prisma = req.prisma as PrismaClient;
   const authHeader = req.headers["authorization"];
@@ -17,9 +18,9 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 
     // @ts-ignore
     req.user = user;
-    const admin= await prisma.admins.findUnique({where:{user_id:user.id}})
+    const kycInfo= await getKycInfoByUser(user.id,prisma)
 
-    if (!admin) return res.sendStatus(403);
+    if (kycInfo?.status!="APROBADO") return res.sendStatus(403);
 
     next();
   });

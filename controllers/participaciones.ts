@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { getProjectById } from "../service/backoffice";
 import moment from "moment";
 import { createCharge } from "../service/stripe";
-import { getCuentaById, getGestionByPorjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta } from "../service/participaciones";
+import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail } from "../service/mail";
 import {  crearDocumentoDeCompra } from "../service/pandadoc";
@@ -14,14 +14,14 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const prisma = req.prisma as PrismaClient;
            // @ts-ignore
     const USER= req.user as User;
-      const {project_id,cardNumber,exp_month,exp_year,cvc}= req.body;
+      const {project_id,cardNumber,exp_month,exp_year,cvc,cantidad}= req.body;
       const project=await getProjectById(project_id,prisma)
-      const gestion= await getGestionByPorjectId(project_id,prisma)
+      const gestion= await getGestionByProjectId(project_id,prisma)
       const kycInfo=await getKycInfoByUser(USER.id,prisma)
       if(!kycInfo) return res.json({error:"Kyc no encontrado"})
     //   const tipoDeUser= await getTipoDeUser(kycInfo?.wallet,project_id,prisma)
-      if(!project || !gestion || !project.precio_unitario) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
-      if(project.cantidadRestante==0) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
+      if(!project || !gestion || !project.precio_unitario || !project.cantidadRestante) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
+      if(project.cantidadRestante>=cantidad) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
       const now= moment()
     //   if(!now.isBetween(moment(gestion.fecha_abierto),moment(gestion.fecha_en_proceso)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
       
@@ -36,6 +36,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
         tipo:"COMPRA",
         user_id:USER.id,
         project_id:project.id,
+        cantidad:cantidad,
         document_id:documentID,
         status:"POR_FIRMAR"
         }
@@ -52,20 +53,24 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const prisma = req.prisma as PrismaClient;
            // @ts-ignore
     const USER= req.user as User;
-      const {project_id}= req.body;
+      const {project_id, cantidad}= req.body;
       const project=await getProjectById(project_id,prisma)
-      const gestion= await getGestionByPorjectId(project_id,prisma)
-      if(!project || !gestion || !project.precio_unitario || !project.cuenta_id) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
-      if(project.cantidadRestante==0) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
-      const now= moment()
-    //   if(!now.isBetween(moment(gestion.fecha_abierto),moment(gestion.fecha_en_proceso)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
+      const gestion= await getGestionByProjectId(project_id,prisma)
+      const kycInfo= await getKycInfoByUser(USER.id,prisma)
+      if(!project || !gestion || !project.precio_unitario || !project.cuenta_id || !kycInfo?.wallet || !project.cantidadRestante || !gestion.fecha_fin_venta) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
+      const fecha_abierto_por_usuario= await getFechaDeVentaInicial(kycInfo.wallet,project?.id,prisma)
       const cuenta= await getCuentaById(project.cuenta_id,prisma)
       if(!cuenta) return res.status(404).json({error:"Cuenta bancaria no encontrada"})
-      await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT")
+      if(project.cantidadRestante<cantidad) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
+      const now= moment()
+    console.log(fecha_abierto_por_usuario,gestion.fecha_fin_venta)
+      if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="PUBLICO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
+      await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario*cantidad,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT")
         const order= await prisma.orders.create({
         data:{
         tipo:"COMPRA",
         user_id:USER.id,
+        cantidad:cantidad,
         project_id:project.id,
         status:"PAGO_PENDIENTE",
         fecha:new Date()

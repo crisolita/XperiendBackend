@@ -11,13 +11,8 @@ datasource db {
 }
 
 model Admins {
-  id             Int     @id @default(autoincrement())
-  email          String? @unique
-  password       String?
-  authToken      String?
-  referallFriend String?
-  googleID       String? @unique
-  userName       String? @unique
+  user_id Int  @id
+  user    User @relation(fields: [user_id], references: [id])
 }
 
 model User {
@@ -36,13 +31,14 @@ model User {
   pagos          Pagos[]
   kycInfo        KycInfo?
   OrdersXREN     OrdersXREN[]
+  Admins         Admins[]
 }
 
 model Templates {
-  id         String   @id
-  project_id Int
+  id            String       @id
+  project_id    Int
   document_type DocumentType
-  project    Projects @relation(fields: [project_id], references: [id])
+  project       Projects     @relation(fields: [project_id], references: [id])
 }
 
 model KycInfo {
@@ -182,6 +178,7 @@ model Orders {
   document_id String?
   fecha       DateTime?
   nft_id      Int?
+  cantidad Int
   nft         NFT?             @relation(fields: [nft_id], references: [id])
   project     Projects?        @relation(fields: [project_id], references: [id])
   user        User             @relation(fields: [user_id], references: [id])
@@ -228,8 +225,8 @@ enum Estado {
   NUEVO
   PROXIMAMENTE
   PUBLICO
-  ABIERTO
   EN_PROCESO
+  NO_COMPLETADO
   CERRADO
   TERMINADO
 }
@@ -271,6 +268,7 @@ enum EstadoPagoYFirma {
   POR_FIRMAR
   FIRMADO_POR_ENTREGAR
 }
+
 enum DocumentType {
   COMPRA
   INTERCAMBIO

@@ -1,14 +1,14 @@
 import express from "express";
 import { authenticateToken } from "../middleware/auth";
-import { prueba } from "../controllers/participaciones";
-// import { compraParticipacionStripe } from "../controllers/participaciones";
+import { compraParticipacionTransferenciaBancaria  } from "../controllers/participaciones";
+import { isKycRequired } from "../middleware/kycRequired";
 
 const router = express.Router();
 
 //NFTs?
-// router.post("/compra-participacion", authenticateToken, compraParticipacionStripe);
+router.post("/compra-participacion-transferencia", isKycRequired, compraParticipacionTransferenciaBancaria);
 
-router.get("/prueba",prueba)
+// router.get("/prueba",prueba)
 
 
 export default router;

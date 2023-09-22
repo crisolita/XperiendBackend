@@ -6,7 +6,7 @@ import { getProjectById, updateEscenario, updateFechas, updateProject } from "..
 import moment from "moment";
 import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
-import { crearDocumentoDeCompra } from "../service/pandadoc";
+import { crearDocumentoDeCompra, getTemplates, isValidTemplate } from "../service/pandadoc";
 import { getKycInfoByUser, getUserById, updateKyc } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract } from "../service/web3";
@@ -148,6 +148,7 @@ export const convertFullName = (str: string) =>
         fecha_inicio_reinversion,
         fecha_fin_reinversion,
         fecha_reclamo,
+        fecha_fin_venta,
         fecha_inicio_intercambio,
         fecha_fin_intercambio,
         visible_user,
@@ -155,18 +156,28 @@ export const convertFullName = (str: string) =>
         visible_gold
       }= req.body;
       let fechas;
+      
         const exist= await prisma.gestion_fechas.findUnique({where:{project_id:project_id}})
         if(exist) {
-         fechas=await updateFechas(project_id,req.body,prisma)
+         fechas=await updateFechas(project_id,{ fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): null,
+          fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): null,
+        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): null,
+        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): null,
+        fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): null,
+        fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): null,
+        visible_user,
+        visible_premium,
+        visible_gold},prisma)
         } else {
           fechas= await prisma.gestion_fechas.create({
             data:{
               project_id,
-              fecha_inicio_reinversion,
-          fecha_fin_reinversion,
-        fecha_reclamo,
-        fecha_inicio_intercambio,
-        fecha_fin_intercambio,
+              fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): null,
+            fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): null,
+          fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): null,
+        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): null,
+        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): null,
+        fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): null,
         visible_user,
         visible_premium,
         visible_gold
@@ -279,19 +290,17 @@ export const convertFullName = (str: string) =>
             nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "PUBLICO":
-            if(estado!=="ABIERTO") return res.status(400).json({error:"Estado incorrecto"})
-            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
-          break;
-          case "ABIERTO":
-            if(estado!=="EN_PROCESO" || estado!=="CERRADO") return res.status(400).json({error:"Estado incorrecto"})
+            if(estado!=="EN_PROCESO" || estado!=="NO_COMPLETADO") return res.status(400).json({error:"Estado incorrecto"})
             nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "EN_PROCESO":
-            if(estado!=="TERMINADO") return res.status(400).json({error:"Estado incorrecto"})
+            if(estado!=="CERRADO") return res.status(400).json({error:"Estado incorrecto"})
             nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break
           case "CERRADO":
-          return res.status(400).json({error:"Estado cerrado"})
+            if(estado!=="TERMINADO") return res.status(400).json({error:"Estado incorrecto"})
+            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+          break;
           case "TERMINADO":
           return res.status(400).json({error:"Estado terminado"})
       }
@@ -306,11 +315,22 @@ export const convertFullName = (str: string) =>
       // @ts-ignore
       const prisma = req.prisma as PrismaClient;
       const {
-        project_id,
-       estado
+      project_id,
+      template_id,
+      document_type
       }= req.body;
-     
-      // return res.status(200).json({ data: });
+          const isValid= await isValidTemplate(template_id)
+          if(!isValid) return res.status(404).json({error:"Template no encontrado en PandaDoc"})
+          const isAlready=await prisma.templates.findUnique({where:{id:template_id}})
+          const project= await getProjectById(project_id,prisma)
+          if(isAlready || !project) return res.status(400).json({error:"Template ya guardado o proyecto no encontrado"})
+              const data= await prisma.templates.create({
+              data:{
+              id:template_id,
+              project_id:project_id,
+              document_type
+            }})
+      return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -331,13 +351,15 @@ export const manageSaleUser = async (req: Request, res: Response) => {
       minXRENstake
     }= req.body;
     const project= await getProjectById(project_id,prisma)
+    const isValid= moment(openingDate).isValid()
+    if(!isValid) return res.status(400).json({error:"Fecha invalida"})
     let updated;
     if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
     const exist = await prisma.userManage.findFirst({where:{project_id:project.id,tipoDeUser:tipoDeUser}})
   if(exist) {
-     updated = await prisma.userManage.update({where:{id:exist.id},data:{openingDate:openingDate,minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
+     updated = await prisma.userManage.update({where:{id:exist.id},data:{openingDate:new Date(openingDate),minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
   } else  {
-    updated = await prisma.userManage.create({data:{project_id:project_id,tipoDeUser:tipoDeUser,openingDate:openingDate,minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
+    updated = await prisma.userManage.create({data:{project_id:project_id,tipoDeUser:tipoDeUser,openingDate:new Date(openingDate),minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
   }
     return res.status(200).json({ data:updated });
   } catch ( error) {
@@ -455,6 +477,27 @@ export const getFechasByProject= async(req:Request,res:Response) => {
     return res.status(500).json({error:e})
     }  
 }
+export const getTemplatesByPandaDoc= async(req:Request,res:Response) => {
+  try {    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const data= await getTemplates()
+    return res.json({data:data.results})
+  } catch(e) {
+    console.log(e)
+    return res.status(500).json({error:e})
+    }  
+}
+export const getUserSalesManage= async(req:Request,res:Response) => {
+  try {    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const data= await prisma.userManage.findMany()
+    return res.json(data)
+  } catch(e) {
+    console.log(e)
+    return res.status(500).json({error:e})
+    }  
+}
+ 
  
 
 
@@ -547,3 +590,33 @@ const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
   }
 };
  
+
+
+///funciones de super admin
+///Crear un nuevo admin 
+export const changeRolUser= async(req:Request,res:Response) => {
+  try {    
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const {user_id, isAdmin} = req.body 
+    const usuario= await getUserById(user_id,prisma)
+    let data;
+    if(!usuario) return res.status(404).json({error:"Usuario no encontrado"})
+    const admin= await prisma.admins.findUnique({where:{user_id}})
+    if (isAdmin && admin) return res.json({error:"Admin ya existe"})
+    else if (!isAdmin && !admin) return res.json({error:"Admin no existe"})
+    else if(isAdmin && !admin) {
+        data= await prisma.admins.create({
+          data:{
+            user_id:usuario.id
+          }
+        })
+    } else if (!isAdmin &&  admin) {
+      data= await prisma.admins.delete({where:{user_id}})
+    }
+    return res.json(data)
+
+  } catch(error) {
+    return res.status(500).json(error)
+    }  
+}

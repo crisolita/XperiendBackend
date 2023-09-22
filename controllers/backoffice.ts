@@ -64,7 +64,7 @@ export const convertFullName = (str: string) =>
   export const addImage= async(req:Request,res:Response) => {
     try {    // @ts-ignore
       const prisma = req.prisma as PrismaClient;
-      const {project_id,rol}=req.body;
+      const {project_id,rol,image}=req.body;
       const project=await prisma.projects.findUnique({where:{id:project_id}})
       if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
       const path=`${project.titulo}_${project_id}_${project.count_image? project.count_image+1 : 1}`
@@ -75,11 +75,9 @@ export const convertFullName = (str: string) =>
         rol:rol
       }})
        // // Utiliza fetch aquí dentro
-       let img= await fetch("https://picsum.photos/200/300")
-       const blob = await img.arrayBuffer()
-       console.log(blob)
-      
-      await uploadImage(blob,path)
+       const data= Buffer.from(image.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+
+       await uploadImage(data,path)
       await prisma.projects.update({
         where:{id:project_id},
         data:{
@@ -384,7 +382,7 @@ export const manageSaleUser = async (req: Request, res: Response) => {
         if(order?.tipo!=="COMPRA" || !project || !project.precio_unitario) return res.status(400).json({error:"No es una transaccion de venta"})
     
         const pago = await crearPago(USER.id,project.precio_unitario,"TRANSFERENCIA_BANCARIA",new Date(),"Compra de participacion",prisma)
-        const documentID= await crearDocumentoDeCompra(USER.id,project.id,prisma)
+        const documentID= await crearDocumentoDeCompra(USER.id,project.id,"COMPRA",prisma)
         const newOrder= await updateOrder(order.id,{documentId:documentID,status:"POR_FIRMAR"},prisma)
         return res.status(200).json({ data:{pago,newOrder} });
 

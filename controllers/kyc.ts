@@ -46,7 +46,6 @@ try {
 
      const images=[foto_dni_frontal.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')]
     
-      const buffer= Buffer.from(images[0],'base64')
      // hacer loop para subirlas a ipfs y guardar la data 
      for (let i=0;i<images.length;i++) {
       const path=`kyc_image_${user.id}_${info.id}_${i==0?"DNIFRONTAL":"DNITRASERA"}`

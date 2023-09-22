@@ -2,6 +2,7 @@ import * as pd_api from "pandadoc-node-client";
 import { getKycInfoByUser, getUserById } from "./user";
 import { PrismaClient} from "@prisma/client";
 import { getProjectById } from "./backoffice";
+import { DocumentType } from "aws-sdk";
 // replace it with your API key
 const API_KEY = "4eb0dfbe4c091333e7fd909a3dd16fe2b5ecb054";
 const configuration = pd_api.createConfiguration(
@@ -25,16 +26,16 @@ export const ensureSentDocument= async (documentId:string) =>{
     }
   }
 }
-export const crearDocumentoDeCompra= async (userId:number,project_id:number,prisma:PrismaClient) => {
+export const crearDocumentoDeCompra= async (userId:number,project_id:number,template_id:string,prisma:PrismaClient) => {
     const user= await getUserById(userId,prisma)
     const project=await getProjectById(project_id,prisma)
     if(user ) {
             const kycInfo= await getKycInfoByUser(user?.id,prisma)
 
         const documentCreateRequest: pd_api.DocumentCreateRequest = {
-            name: "Documento de venta",
-            templateUuid:"eWwha59cftFdfQVecqg825",
-            tags: ["Esta es una venta"],
+            name: "Documento de Compra",
+            templateUuid:template_id,
+            tags: ["Esta es una Compra"],
             recipients: [
               {
                 email: user.email,
@@ -71,8 +72,10 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,pris
             documentCreateRequest: documentCreateRequest,
           });
           if(document.id){
-            ensureSentDocument(document.id)
-            if(!ensureSentDocument) return undefined
+            console.log(document.id, "gola")
+           const sure= await ensureSentDocument(document.id)
+           console.log(sure,"sureee")
+            if(!sure) return undefined
             const sent= await apiInstanceDocuments.sendDocument({
                   id: String(document.id),
                   documentSendRequest: {

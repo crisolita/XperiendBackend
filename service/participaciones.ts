@@ -44,9 +44,10 @@ export const updateFechas = async (
 export const updateOrder = async (
   id: number,
   data: {  
-    documentId?:string,
+    document_id?:string,
     status?:EstadoPagoYFirma,
-    nft_id?:number
+    nft_id?:number,
+     cantidad?:number
    },
   prisma: PrismaClient
 ) => {

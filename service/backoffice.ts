@@ -63,7 +63,9 @@ export const updateProject = async (
     beneficio_estimado?:number,
     plazo_ejecucion?:number,
     ejecucion_proyecto?:number,
-    concepto_bancario?:string
+    concepto_bancario?:string,
+    description?:string,
+    recuperar_dinero_info?:string
   },
   prisma: PrismaClient
 ) => {

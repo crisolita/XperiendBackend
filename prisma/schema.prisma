@@ -267,6 +267,8 @@ enum EstadoPagoYFirma {
   ERROR_EN_PAGO
   POR_FIRMAR
   FIRMADO_POR_ENTREGAR
+  PAGO_CANCELADO
+  PAGO_DEVUELTO
 }
 
 enum DocumentType {

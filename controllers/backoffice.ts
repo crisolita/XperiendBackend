@@ -10,7 +10,7 @@ import { crearDocumentoDeCompra, getTemplates, isValidTemplate } from "../servic
 import { getKycInfoByUser, getUserById, updateKyc } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract } from "../service/web3";
-import { sendThanksBuyEmail } from "../service/mail";
+import { sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail } from "../service/mail";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -218,32 +218,8 @@ export const convertFullName = (str: string) =>
       res.status(500).json( error );
     }
   };
-  export const updateProjectCantidadYPrecio = async (req: Request, res: Response) => {
-    try {
-      // @ts-ignore
-      const prisma = req.prisma as PrismaClient;
-      const {
-        project_id,
-        cantidad,
-        precio_unitario,
-        beneficioPorNFT,
-        proyectoReinversion
-      }= req.body;
-      let newProject;
-      const project= await getProjectById(project_id,prisma)
-      if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
-      newProject= await updateProject(project_id,{cantidadInicial:cantidad,cantidadRestante:cantidad,
-        precio_unitario,
-        beneficioPorNFT,
-        proyectoReinversion},prisma)
-       
-      return res.status(200).json({ data: newProject});
-    } catch ( error) {
-      console.log(error)
-      res.status(500).json( error );
-    }
-  };
-  export const updateProjectPlazoYBeneficio = async (req: Request, res: Response) => {
+
+  export const updateProjectController = async (req: Request, res: Response) => {
     try {
       // @ts-ignore
       const prisma = req.prisma as PrismaClient;
@@ -252,14 +228,23 @@ export const convertFullName = (str: string) =>
         rentabilidad_estimada,
         beneficio_estimado,
         plazo_ejecucion,
-        ejecucion_proyecto
+        ejecucion_proyecto,
+        cantidad,
+        precio_unitario,
+        beneficioPorNFT,
+        proyectoReinversion,description,
+        recuperar_dinero_info
       }= req.body;
         const project= await getProjectById(project_id,prisma)
         if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
         const updated= await updateProject(project_id,{rentabilidad_estimada,
           beneficio_estimado,
           plazo_ejecucion,
-          ejecucion_proyecto},prisma)
+          ejecucion_proyecto, cantidadInicial:cantidad,cantidadRestante:cantidad,
+          precio_unitario,
+          beneficioPorNFT,
+          proyectoReinversion,description,
+          recuperar_dinero_info},prisma)
 
       return res.status(200).json({ data: updated});
     } catch ( error) {
@@ -368,30 +353,45 @@ export const manageSaleUser = async (req: Request, res: Response) => {
   
 /// gestion de pagos por transferencia bancaria 
  //endpoint que va a llamar el admin
- export const cambiarStatusDeTransferenciaParaProyectos = async (req: Request, res: Response) => {
+ export const cambiarStatusDeTransferenciaParticipacion = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-         // @ts-ignore
-  const USER= req.user as User;
-    const {order_id,success}= req.body;
+  
+    const {order_id,amountUSD,status,fecha_recibido,fecha_devolucion}= req.body;
     const order= await getOrderById(order_id,prisma)
     if(!order) return res.status(404).json({error:"Orden no encontrada"})
     const project= await getProjectById(order.project_id,prisma)
-    if(success) {
-        if(order?.tipo!=="COMPRA" || !project || !project.precio_unitario) return res.status(400).json({error:"No es una transaccion de venta"})
-    
-        const pago = await crearPago(USER.id,project.precio_unitario,"TRANSFERENCIA_BANCARIA",new Date(),"Compra de participacion",prisma)
-        const documentID= await crearDocumentoDeCompra(USER.id,project.id,"COMPRA",prisma)
-        const newOrder= await updateOrder(order.id,{documentId:documentID,status:"POR_FIRMAR"},prisma)
+
+    if(status=='CONFIRMADO') {
+        if(order?.tipo!=="COMPRA" || !project || !project.precio_unitario || !amountUSD) return res.status(400).json({error:"No es una transaccion de venta y/o montos no definidos"})
+        const mod= amountUSD%project.precio_unitario
+       const result= amountUSD/project.precio_unitario
+        if(mod!=0) return res.status(400).json({error:"Monto no es relativo al precio unitario"})
+        const pago = await crearPago(order.user_id,amountUSD,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion",prisma)
+        const template_id=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"COMPRA"}})
+
+        if(!template_id) return res.status(404).json({error:"No template id encontrado"})
+        const documentID= await crearDocumentoDeCompra(order.user_id,project.id,template_id.id,prisma)
+        const newOrder= await updateOrder(order.id,{document_id:documentID,status:"POR_FIRMAR",cantidad:result},prisma)
         return res.status(200).json({ data:{pago,newOrder} });
-
-    } else  {
-      const newOrder= await updateOrder(order.id,{status:"ERROR_EN_PAGO"},prisma)
+    
+    } else if(status=="CANCELADO"){
+      const user= await getUserById(order.user_id,prisma)
+      if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
+      await sendPagoCancelado(user?.email,order.id,`TRANSFERENCIA POR COMPRA DE PARTIPACION EN EL PROYECTO ${project?.titulo}`)
+      const newOrder= await updateOrder(order.id,{status:"PAGO_CANCELADO"},prisma)
       return res.status(200).json({ data:{newOrder} });
-
+    } 
+    else if (status=="DEVUELTO") {
+      const user= await getUserById(order.user_id,prisma)
+      if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
+      await sendPagoDevuelto(user?.email,order.id,`TRANSFERENCIA POR COMPRA DE PARTIPACION EN EL PROYECTO ${project?.titulo} HA SIDO DEVUELTA`,amountUSD,fecha_devolucion)
+      const newOrder= await updateOrder(order.id,{status:"PAGO_DEVUELTO"},prisma)
+      return res.status(200).json({ data:{newOrder} });
     }
-  } catch ( error) {
+  }
+  catch ( error) {
     console.log(error)
     res.status(500).json( error );
   }

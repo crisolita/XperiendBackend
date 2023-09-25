@@ -49,3 +49,23 @@ export async function sendCompraTransferenciaEmail(email: string,numeroDecuenta:
   };
   return transporter.sendMail(mailData);
 }
+
+export async function sendPagoCancelado(email: string,order_id:number,concepto:string) {
+  const mailData = {
+    from: process.env.EMAILADDRESS, // sender address
+    to: email, // list of receivers
+    subject: `Su pago ha sido cancelado`,
+    html: `<h2 style="color:#23262F;">${concepto}</h2><h3 style="color:#6E7786;">Su pago ha sido cancelado, le recordamos que ya no debe hacer la transferencia bancaria por la orden ${order_id}, de hacer la transferencia la misma sera devuelta</h3>`,
+  };
+  return transporter.sendMail(mailData);
+}
+
+export async function sendPagoDevuelto(email: string,order_id:number,concepto:string,cantidad:number,fecha:string) {
+  const mailData = {
+    from: process.env.EMAILADDRESS, // sender address
+    to: email, // list of receivers
+    subject: `Su pago ha sido devuelto`,
+    html: `<h2 style="color:#23262F;">${concepto}</h2><h3 style="color:#6E7786;">Su pago ha sido devuelto, la orden ${order_id} con el monto pagado ${cantidad} ha sido devuelto el ${fecha}</h3>`,
+  };
+  return transporter.sendMail(mailData);
+}

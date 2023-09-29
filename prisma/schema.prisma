@@ -37,7 +37,7 @@ model User {
 model Templates {
   id            String       @id
   project_id    Int
-  document_type DocumentType
+  document_type Tipo
   project       Projects     @relation(fields: [project_id], references: [id])
 }
 
@@ -179,6 +179,7 @@ model Orders {
   fecha       DateTime?
   nft_id      Int?
   cantidad Int
+  url_sign String?
   nft         NFT?             @relation(fields: [nft_id], references: [id])
   project     Projects?        @relation(fields: [project_id], references: [id])
   user        User             @relation(fields: [user_id], references: [id])
@@ -248,9 +249,9 @@ enum Escenario {
 
 enum Tipo {
   COMPRA
-  VENTA
+  INTERCAMBIO
   RECOMPRA
-  RECLARMAR
+  RECLAMACION
   REINVERSION
 }
 
@@ -271,10 +272,4 @@ enum EstadoPagoYFirma {
   PAGO_DEVUELTO
 }
 
-enum DocumentType {
-  COMPRA
-  INTERCAMBIO
-  RECOMPRA
-  REINVERSION
-  RECLAMACION
-}
+

@@ -1,5 +1,5 @@
 import express from "express";
-import { addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getCuentaByProject, getCuentas, getFechasByProject, getImagesByProject, getKycImage, getKycInfo, getTemplatesByPandaDoc, getUserSalesManage, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getAllUsersController, getCuentaByProject, getCuentas, getFechasByProject, getImagesByProject, getTemplatesByPandaDoc, getUserSalesManage, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
@@ -33,6 +33,8 @@ router.get("/cuentaByProject",getCuentaByProject)
 router.get("/fechas",getFechasByProject)
 router.get("/userSaleManage",getUserSalesManage)
 router.get("/templates",getTemplatesByPandaDoc)
+router.get("/users",getAllUsersController)
+
 
 
 
@@ -42,8 +44,6 @@ router.put("/updateTransferenciaXREN",authenticateToken,cambiarStatusDeTransfere
 
 
 //gestion KYC
-router.get("/getAllKYC",getKycInfo);
-router.get("/getKycImages",getKycImage);
 router.put("/manageKYC",updateKYCStatus)
 
 

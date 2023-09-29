@@ -1,13 +1,14 @@
 import { PrismaClient, User } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, Response, response } from "express";
 import { getProjectById } from "../service/backoffice";
 import moment from "moment";
 import { createCharge } from "../service/stripe";
-import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta } from "../service/participaciones";
+import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail } from "../service/mail";
-import {  crearDocumentoDeCompra } from "../service/pandadoc";
+import {  crearDocumentoDeCompra, isCompleted } from "../service/pandadoc";
 import { getKycInfoByUser } from "../service/user";
+import fetch from "node-fetch";
 export const compraParticipacionStripe = async (req: Request, res: Response) => {
     try {
       // @ts-ignore
@@ -33,20 +34,21 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       
       const pago = await crearPago(USER.id,project.precio_unitario*cantidad,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion",prisma)
      
-      const documentID= await crearDocumentoDeCompra(USER.id,project.id,template_id.id,prisma)
-      if(!documentID) return res.status(500).json({error:"Falla al crear documento"})
+      const docData= await crearDocumentoDeCompra(USER.id,project.id,template_id.id,prisma)
+      if(!docData) return res.status(500).json({error:"Falla al crear documento"})
       const order= await prisma.orders.create({
         data:{
         tipo:"COMPRA",
         user_id:USER.id,
         project_id:project.id,
         cantidad:cantidad,
-        document_id:documentID,
+        document_id:docData.id,
+        url_sign:docData.link,
         fecha:new Date(),
         status:"POR_FIRMAR"
         }
     })
-      return res.status(200).json({ data:{pago,order} });
+      return res.status(200).json({pago,order} );
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -82,7 +84,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
         }
     })
 
-      return res.status(200).json({ data:{order,concepto:project.concepto_bancario,numero:cuenta.numero,banco:cuenta.banco} });
+      return res.status(200).json({order,concepto:project.concepto_bancario,numero:cuenta.numero,banco:cuenta.banco} );
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -91,12 +93,11 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
 
   export const prueba = async (req: Request, res: Response) => {
     try {
-    //   // @ts-ignore
-    //   const prisma = req.prisma as PrismaClient;
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
     //        // @ts-ignore
     // const USER= req.user as User;
-    // await getTotalBalanceVenta("0x8068dbC41e2f1C988EB0399da5C44F43b5e646C1")
-    await getTotalBalanceStake("0x8068dbC41e2f1C988EB0399da5C44F43b5e646C1")
+      const hola= await crearDocumentoDeCompra(1,1,"eWwha59cftFdfQVecqg825",prisma)
     res.json("prueba")
     } catch ( error) {
       console.log(error)
@@ -104,4 +105,39 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     }
   };
 
+  export const signedDocument = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+           // @ts-ignore
+    const USER= req.user as User;
+    const {document_id}= req.body
+    let newOrder;
+    const order= await prisma.orders.findFirst({where:{document_id,user_id:USER.id}})
+    if(!order) return res.status(404).json({error:"Orden no encontrada"})
+    
+    const signed= await isCompleted(document_id)
+    if(!signed) return res.json({data:{document_signed:signed,order}})
+    newOrder= await updateOrder(order.id,{status:"FIRMADO_POR_ENTREGAR"},prisma)
+
+    switch(order.tipo) {
+      case 'COMPRA':
+        ///MINTEAR UN NFT?
+        break
+      case 'RECLAMACION':
+        break
+      case 'RECOMPRA':
+        break
+      case 'REINVERSION':
+        break
+        case 'INTERCAMBIO':
+          break
+    }  
+
+    res.json("prueba")
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
  

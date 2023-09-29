@@ -5,7 +5,6 @@ import {
   changePasswordController,
   getRecoveryCode,
   getAuthCode,
-  getAllUsersController,
   userGoogleController,
   changeNewsletter,
   getUserInfo,
@@ -25,7 +24,6 @@ router.post(
   validator.body(querySchemaRegistro),
   userRegisterController
 );
-router.get("/",getAllUsersController)
 router.get("/userInfo",authenticateToken, getUserInfo)
 
 

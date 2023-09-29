@@ -7,13 +7,7 @@ export const getUserById = async (id: number, prisma: PrismaClient) => {
 };
 
 export const getAllUsers = async (prisma: PrismaClient) => {
-  return await prisma.user.findMany({
-    where: {
-      NOT: {
-        id: 1,
-      },
-    },
-  });
+  return await prisma.user.findMany();
 };
 
 export const getUserByEmail = async (email: string, prisma: PrismaClient) => {

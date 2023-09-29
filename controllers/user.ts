@@ -27,26 +27,7 @@ export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
 
 
-  export const getAllUsersController = async (req: Request, res: Response) => {
-    try {
-      // @ts-ignore
-      const prisma = req.prisma as PrismaClient;
-      const users = await getAllUsers(prisma);
-      const data: { [key: string]: any } = {};
-      users.forEach((user) => {
-        data[user.id] = {
-         userName:user.userName,
-          email: user.email,
-          referrallFriend:user.referallFriend,
-          newsletter:user.newsletter
-        };
-      });
-      return res.status(200).json({ data:data });
-    } catch ( error) {
-      console.log(error)
-      res.status(500).json( error );
-    }
-  };
+
 export const userRegisterController = async (req: Request, res: Response) => {
   try {
     const salt = bcrypt.genSaltSync();
@@ -74,14 +55,14 @@ export const userRegisterController = async (req: Request, res: Response) => {
       });
         await sendWelcomeEmail(email,userName);
         res.status(200).json(
-        { data: { email: email, referallCode:userName,userName:userName} }
+        { email: email, referallCode:userName,userName:userName} 
       );
       } else {
       res.status(400).json({error:"Email ya registrado"})
     }
   } catch ( error ) {
     console.log(error)
-    res.status(500).json({error:error})
+    res.status(500).json(error)
   }
 };
 export const userGoogleController = async (req: Request, res: Response) => {
@@ -124,7 +105,7 @@ export const userLoginController = async (req: Request, res: Response) => {
     if (user ) {
       if (bcrypt.compareSync(authCode,user.authToken? user.authToken :"")) 
         return res.status(200).json(
-       { data: {email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend, kycPassed:user.kycPassed, token: createJWT(user)} }
+       {email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend, kycPassed:user.kycPassed, token: createJWT(user)} 
         );
       else
         return res.status(403).json({ error: "Token auth incorrecto." });
@@ -132,7 +113,7 @@ export const userLoginController = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Email incorrecto" });
     }
   } catch ( error ) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(error);
 
   }
 };
@@ -158,7 +139,7 @@ export const getRecoveryCode =async (req: Request, res: Response) => {
       res.status(400).json({error:"Email o contraaseña incorrectos"})
     }
   } catch(error) {
-    return res.status(500).json({ error: error });
+    return res.status(500).json(error);
   } 
 }
 export const getAuthCode = async (req: Request, res: Response) => {
@@ -184,7 +165,7 @@ export const getAuthCode = async (req: Request, res: Response) => {
     }
   } catch(error) {
     console.log(error)
-    return res.status(500).json({ error: error });
+    return res.status(500).json(error);
   } 
 }
 
@@ -202,7 +183,7 @@ export const changePasswordController = async (req: Request, res: Response) => {
           { password: bcrypt.hashSync(newPassword, salt) },
           prisma
         );
-        return res.status(200).json({ data: {email:user.email} });
+        return res.status(200).json({email:user.email});
       } else
         return res.status(400).json({ error: "Token 2fa incorrecto." });
     } else {
@@ -227,13 +208,11 @@ export const changeNewsletter = async (req: Request, res: Response) => {
       userUpdate=await updateUser(USER.id,{newsletter:false},prisma)
     }
       return res.status(200).json(
-       {
-          data: {email:user?.email,newsletter:user?.newsletter},
-        }
+       {email:user?.email,newsletter:user?.newsletter},
       );
   } catch(error) {
     console.log(error)
-    return res.status(500).json({ error: error });
+    return res.status(500).json(error);
   } 
 }
 
@@ -246,7 +225,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const user= await getUserById(USER.id,prisma)
     const kycInfo=await getKycInfoByUser(USER.id,prisma)
     const kycImages= await prisma.kycImages.findMany({where:{info_id:kycInfo?.id}})
-    return res.json({data:{kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed}})
+    return res.json({kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

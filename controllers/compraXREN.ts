@@ -44,7 +44,7 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
         }
       })
       await sendThanksBuyEmail(user.email,tokenAmount,"TARJETA DE CREDITO")
-      return res.status(200).json({ data:{pago,order} });
+      return res.status(200).json({pago,order});
     } catch ( error) {
       console.log(error)
       await prisma.pagos.delete({where:{id:pago?.id}})
@@ -75,7 +75,7 @@ const order = await prisma.ordersXREN.create({
 })
 // de donde saco la cuenta?
 await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,tokenAmount,"Compra XREN","Compra XREN")
-return res.status(200).json({ data:{order} });
+return res.status(200).json(order);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );

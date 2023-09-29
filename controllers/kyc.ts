@@ -2,9 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { uploadImage } from "../service/aws";
-import fetch from "node-fetch";
-const stripe = require('stripe')(process.env.SK_TEST);
-const endpointSecret=process.env.WEBHOOKSECRET_TEST;
 
 
 
@@ -62,7 +59,7 @@ try {
         dataImages.push(img)
      }
 
-     return res.json({data:{info,dataImages}})
+     return res.json({info,dataImages})
    }
    
 
@@ -99,7 +96,7 @@ export const updateKYC= async (req:Request,res: Response) => {
             const data= Buffer.from(foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
             await uploadImage(data,path)
           }
-          return res.json({data:{info}})
+          return res.json(info)
      }
      
   

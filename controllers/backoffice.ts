@@ -7,7 +7,7 @@ import moment from "moment";
 import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { crearDocumentoDeCompra, getTemplates, isValidTemplate } from "../service/pandadoc";
-import { getKycInfoByUser, getUserById, updateKyc } from "../service/user";
+import { getAllUsers, getKycInfoByUser, getUserById, updateKyc } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract } from "../service/web3";
 import { sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail } from "../service/mail";
@@ -29,7 +29,7 @@ export const convertFullName = (str: string) =>
      // @ts-ignore
     // const USER= req.user as User;
 
-    const project=await prisma.projects.create({data:{
+    const data=await prisma.projects.create({data:{
         titulo,
         ubicacion,
         definicion,
@@ -38,7 +38,7 @@ export const convertFullName = (str: string) =>
         }})
     
  
-    return res.status(200).json({ data:{project} });
+    return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -109,12 +109,12 @@ export const convertFullName = (str: string) =>
         coste_promocion,
         recursion
       }= req.body;
-      let escenarioEconomico;
+      let data;
         const exist= await prisma.escenario_economico.findFirst({where:{project_id:project_id,escenario:escenario}})
         if(exist) {
-         escenarioEconomico=await updateEscenario(exist.id,req.body,prisma)
+         data=await updateEscenario(exist.id,req.body,prisma)
         } else {
-          escenarioEconomico= await prisma.escenario_economico.create({
+          data= await prisma.escenario_economico.create({
             data:{
               project_id,
               escenario,   
@@ -131,7 +131,7 @@ export const convertFullName = (str: string) =>
           })
         }
 
-      return res.status(200).json({ data: escenarioEconomico});
+      return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -153,11 +153,11 @@ export const convertFullName = (str: string) =>
         visible_premium,
         visible_gold
       }= req.body;
-      let fechas;
+      let data;
       
         const exist= await prisma.gestion_fechas.findUnique({where:{project_id:project_id}})
         if(exist) {
-         fechas=await updateFechas(project_id,{ fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): null,
+         data=await updateFechas(project_id,{ fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): null,
           fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): null,
         fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): null,
         fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): null,
@@ -167,7 +167,7 @@ export const convertFullName = (str: string) =>
         visible_premium,
         visible_gold},prisma)
         } else {
-          fechas= await prisma.gestion_fechas.create({
+          data= await prisma.gestion_fechas.create({
             data:{
               project_id,
               fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): null,
@@ -183,7 +183,7 @@ export const convertFullName = (str: string) =>
           })
         }
 
-      return res.status(200).json({ data: fechas});
+      return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -198,10 +198,10 @@ export const convertFullName = (str: string) =>
         numero,
         banco,concepto_bancario
       }= req.body;
-      let cuenta;
+      let data;
         const exist= await prisma.cuentas.findFirst({where:{numero:numero,banco:banco}})
         if(exist) {
-         cuenta=await updateProject(project_id,{cuenta_id:exist.id,concepto_bancario},prisma)
+         data=await updateProject(project_id,{cuenta_id:exist.id,concepto_bancario},prisma)
         } else {
            const newCuenta=await prisma.cuentas.create({
             data:{
@@ -209,10 +209,10 @@ export const convertFullName = (str: string) =>
               banco
             }
           })
-          cuenta=await updateProject(project_id,{cuenta_id:newCuenta.id,concepto_bancario},prisma)
+          data=await updateProject(project_id,{cuenta_id:newCuenta.id,concepto_bancario},prisma)
         }
 
-      return res.status(200).json({ data: cuenta});
+      return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -237,7 +237,7 @@ export const convertFullName = (str: string) =>
       }= req.body;
         const project= await getProjectById(project_id,prisma)
         if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
-        const updated= await updateProject(project_id,{rentabilidad_estimada,
+        const data= await updateProject(project_id,{rentabilidad_estimada,
           beneficio_estimado,
           plazo_ejecucion,
           ejecucion_proyecto, cantidadInicial:cantidad,cantidadRestante:cantidad,
@@ -246,7 +246,7 @@ export const convertFullName = (str: string) =>
           proyectoReinversion,description,
           recuperar_dinero_info},prisma)
 
-      return res.status(200).json({ data: updated});
+      return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -261,33 +261,33 @@ export const convertFullName = (str: string) =>
        estado
       }= req.body;
       const project= await getProjectById(project_id,prisma)
-      let nuevoEstado;
+      let data;
       if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
       switch (project.estado) {
           case "NUEVO":
             if(estado!=="PROXIMAMENTE") return res.status(400).json({error:"Estado incorrecto"})
-            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+            data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "PROXIMAMENTE":
             if(estado!=="PUBLICO") return res.status(400).json({error:"Estado incorrecto"})
-            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+            data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "PUBLICO":
             if(estado!=="EN_PROCESO" || estado!=="NO_COMPLETADO") return res.status(400).json({error:"Estado incorrecto"})
-            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+            data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "EN_PROCESO":
             if(estado!=="CERRADO") return res.status(400).json({error:"Estado incorrecto"})
-            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+            data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break
           case "CERRADO":
             if(estado!=="TERMINADO") return res.status(400).json({error:"Estado incorrecto"})
-            nuevoEstado= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+            data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "TERMINADO":
           return res.status(400).json({error:"Estado terminado"})
       }
-      return res.status(200).json({ data:nuevoEstado });
+      return res.status(200).json(data );
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -336,15 +336,15 @@ export const manageSaleUser = async (req: Request, res: Response) => {
     const project= await getProjectById(project_id,prisma)
     const isValid= moment(openingDate).isValid()
     if(!isValid) return res.status(400).json({error:"Fecha invalida"})
-    let updated;
+    let data;
     if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
     const exist = await prisma.userManage.findFirst({where:{project_id:project.id,tipoDeUser:tipoDeUser}})
   if(exist) {
-     updated = await prisma.userManage.update({where:{id:exist.id},data:{openingDate:new Date(openingDate),minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
+     data = await prisma.userManage.update({where:{id:exist.id},data:{openingDate:new Date(openingDate),minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
   } else  {
-    updated = await prisma.userManage.create({data:{project_id:project_id,tipoDeUser:tipoDeUser,openingDate:new Date(openingDate),minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
+    data = await prisma.userManage.create({data:{project_id:project_id,tipoDeUser:tipoDeUser,openingDate:new Date(openingDate),minXRENstake:minXRENstake,minXRENwallet:minXRENwallet}})
   }
-    return res.status(200).json({ data:updated });
+    return res.status(200).json(data );
   } catch ( error) {
     console.log(error)
     res.status(500).json( error );
@@ -372,23 +372,25 @@ export const manageSaleUser = async (req: Request, res: Response) => {
         const template_id=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"COMPRA"}})
 
         if(!template_id) return res.status(404).json({error:"No template id encontrado"})
-        const documentID= await crearDocumentoDeCompra(order.user_id,project.id,template_id.id,prisma)
-        const newOrder= await updateOrder(order.id,{document_id:documentID,status:"POR_FIRMAR",cantidad:result},prisma)
-        return res.status(200).json({ data:{pago,newOrder} });
+        
+      const docData= await crearDocumentoDeCompra(order.user_id,project.id,template_id.id,prisma)
+      if(!docData) return res.status(500).json({error:"Falla al crear documento"})
+        const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR",cantidad:result},prisma)
+        return res.status(200).json({pago,newOrder});
     
     } else if(status=="CANCELADO"){
       const user= await getUserById(order.user_id,prisma)
       if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
       await sendPagoCancelado(user?.email,order.id,`TRANSFERENCIA POR COMPRA DE PARTIPACION EN EL PROYECTO ${project?.titulo}`)
       const newOrder= await updateOrder(order.id,{status:"PAGO_CANCELADO"},prisma)
-      return res.status(200).json({ data:{newOrder} });
+      return res.status(200).json(newOrder);
     } 
     else if (status=="DEVUELTO") {
       const user= await getUserById(order.user_id,prisma)
       if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
       await sendPagoDevuelto(user?.email,order.id,`TRANSFERENCIA POR COMPRA DE PARTIPACION EN EL PROYECTO ${project?.titulo} HA SIDO DEVUELTA`,amountUSD,fecha_devolucion)
       const newOrder= await updateOrder(order.id,{status:"PAGO_DEVUELTO"},prisma)
-      return res.status(200).json({ data:{newOrder} });
+      return res.status(200).json(newOrder);
     }
   }
   catch ( error) {
@@ -404,8 +406,9 @@ export const getAllProjects= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     const projects= await prisma.projects.findMany()
-    return res.json({data:projects})
+    return res.json(projects)
   } catch(e) {
+    console.log(e)
     return res.status(500).json({error:e})
     }  
 }
@@ -418,7 +421,7 @@ export const getImagesByProject= async(req:Request,res:Response) => {
       for(let i=0;i<paths.length;i++) {
         images.push(await getImage(paths[i].path))
       }
-    return res.json({data:images})
+    return res.json(images)
   } catch(e) {
 
     console.log(e)
@@ -430,7 +433,7 @@ export const getCuentas= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     const cuentas = await prisma.cuentas.findMany()
-    return res.json({data:cuentas})
+    return res.json(cuentas)
   } catch(e) {
 
     console.log(e)
@@ -444,7 +447,7 @@ export const getCuentaByProject= async(req:Request,res:Response) => {
     const project= await getProjectById(project_id,prisma)
     if(!project?.cuenta_id) return res.status(404).json({error:"Proyecto no tiene cuenta"})
     const cuenta= await prisma.cuentas.findUnique({where:{id:project?.cuenta_id}})
-    return res.json({data:cuenta})
+    return res.json(cuenta)
   } catch(e) {
     console.log(e)
     return res.status(500).json({error:e})
@@ -456,7 +459,7 @@ export const getEscenarioByProject= async(req:Request,res:Response) => {
     const {project_id, escenario}=req.body
     const escenarioEconomico= await prisma.escenario_economico.findFirst({where:{project_id,escenario}})
     if(!escenarioEconomico) return res.status(404).json({error:"Escenario no encontrado"})
-    return res.json({data:escenarioEconomico})
+    return res.json(escenarioEconomico)
   } catch(e) {
     console.log(e)
     return res.status(500).json({error:e})
@@ -469,7 +472,7 @@ export const getFechasByProject= async(req:Request,res:Response) => {
     const {project_id}=req.body
     const fechas= await prisma.gestion_fechas.findFirst({where:{project_id}})
     if(!fechas) return res.status(404).json({error:"Fechas de gestion no encontradas"})
-    return res.json({data:fechas})
+    return res.json(fechas)
   } catch(e) {
     console.log(e)
     return res.status(500).json({error:e})
@@ -479,7 +482,7 @@ export const getTemplatesByPandaDoc= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     const data= await getTemplates()
-    return res.json({data:data.results})
+    return res.json(data.results)
   } catch(e) {
     console.log(e)
     return res.status(500).json({error:e})
@@ -500,29 +503,6 @@ export const getUserSalesManage= async(req:Request,res:Response) => {
 
 
 ///KYC
-export const getKycInfo=async(req:Request, res:Response) => {
-  try {
-       // @ts-ignore
-   const prisma = req.prisma as PrismaClient;
-    const kycs= await prisma.kycInfo.findMany()
-    return res.json({data:{kycs}})
-  } catch (e) {
-    console.log(e)
-    res.status(500).json({error:e})
-  }
-};
-export const getKycImage=async(req:Request, res:Response) => {
-  try {
-       // @ts-ignore
-   const prisma = req.prisma as PrismaClient;
-   const {kyc_id}=req.body;
-  const images= await prisma.kycImages.findMany({where:{info_id:kyc_id}})
-   return res.json({data:{images}})
-  } catch (e) {
-    console.log(e)
-    res.status(500).json({error:e})
-  }
-};
 export const updateKYCStatus=async(req:Request, res:Response) => {
   try {
        // @ts-ignore
@@ -530,10 +510,39 @@ export const updateKYCStatus=async(req:Request, res:Response) => {
    const {kyc_id,status,motivo_rechazo}=req.body;
 
    const updated= await updateKyc(kyc_id,{status,motivo_rechazo},prisma)
-  return res.json({data:{updated}})
+  return res.json(updated)
   } catch (e) {
     console.log(e)
     res.status(500).json({error:e})
+  }
+};
+
+export const getAllUsersController = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const users = await getAllUsers(prisma);
+    console.log(users)
+    const data: { [key: string]: any } = {};
+    let kycImages;
+    for (let user of users) {
+      const kyc=await getKycInfoByUser(user.id,prisma)
+      if(kyc) {
+         kycImages= await prisma.kycImages.findMany({where:{info_id:kyc.id}})
+      }
+      data[user.id] = {
+       userName:user.userName,
+        email: user.email,
+        referrallFriend:user.referallFriend,
+        newsletter:user.newsletter,
+        kycInfo:kyc,
+        kycImages
+      };
+    }
+    return res.status(200).json(data);
+  } catch ( error) {
+    console.log(error)
+    res.status(500).json( error );
   }
 };
 //gestion de venta de XREN 
@@ -548,7 +557,7 @@ export const selectCuentaBancariaXREN=async(req:Request, res:Response) => {
   
   const updated= await prisma.cuentas.update({where:{id:cuenta_id},data:{xrenAccount:true}})
    
-  return res.json({data:{updated}})
+  return res.json(updated)
   } catch (e) {
     console.log(e)
     res.status(500).json({error:e})
@@ -575,11 +584,11 @@ const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
 
          newOrder= await prisma.ordersXREN.update({where:{id:order.id},data:{hash:mint.hash,status:"PAGO_EXITOSO_ENTREGADO"}})
          await sendThanksBuyEmail(user.email,order.unidades,"TRANSFERENCIA_BANCARIA")
-         return res.status(200).json({ data:{pago,newOrder} });
+         return res.status(200).json({pago,newOrder});
 
     } else  {
        newOrder= await prisma.ordersXREN.update({where:{id:order.id},data:{status:"ERROR_EN_PAGO"}})
-      return res.status(200).json({ data:{newOrder} });
+      return res.status(200).json(newOrder);
     }
   } catch ( error) {
     console.log(error)

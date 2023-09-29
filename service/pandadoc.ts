@@ -26,6 +26,17 @@ export const ensureSentDocument= async (documentId:string) =>{
     }
   }
 }
+
+export const isCompleted= async (documentId:string) =>{
+
+    let response = await apiInstanceDocuments.statusDocument({
+      id: String(documentId),
+    });
+    if (response.status === "document.completed") {
+      return true;
+    }
+}
+
 export const crearDocumentoDeCompra= async (userId:number,project_id:number,template_id:string,prisma:PrismaClient) => {
     const user= await getUserById(userId,prisma)
     const project=await getProjectById(project_id,prisma)
@@ -72,19 +83,19 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,temp
             documentCreateRequest: documentCreateRequest,
           });
           if(document.id){
-            console.log(document.id, "gola")
            const sure= await ensureSentDocument(document.id)
-           console.log(sure,"sureee")
             if(!sure) return undefined
             const sent= await apiInstanceDocuments.sendDocument({
                   id: String(document.id),
                   documentSendRequest: {
-                    silent: false,
+                    silent: true,
                     subject: "Contrato de venta pendiente por firmar",
                     message: "Para continuar con el proceso de venta usted debe firmar el siguiente contrato",
                   },
                 });
-                return document.id
+                console.log(sent)
+                const doc= await apiInstanceDocuments.detailsDocument({id:document.id})
+                return {id:document.id,link:doc.recipients? doc.recipients[0].sharedLink : undefined}
           }
     }
 }

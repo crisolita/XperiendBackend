@@ -523,21 +523,22 @@ export const getAllUsersController = async (req: Request, res: Response) => {
     const prisma = req.prisma as PrismaClient;
     const users = await getAllUsers(prisma);
     console.log(users)
-    const data: { [key: string]: any } = {};
     let kycImages;
+    let data=[];
     for (let user of users) {
       const kyc=await getKycInfoByUser(user.id,prisma)
       if(kyc) {
          kycImages= await prisma.kycImages.findMany({where:{info_id:kyc.id}})
       }
-      data[user.id] = {
+      data.push({
+        userId:user.id,
        userName:user.userName,
         email: user.email,
         referrallFriend:user.referallFriend,
         newsletter:user.newsletter,
         kycInfo:kyc,
         kycImages
-      };
+      });
     }
     return res.status(200).json(data);
   } catch ( error) {

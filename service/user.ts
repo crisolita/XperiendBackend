@@ -1,4 +1,4 @@
-import { PrismaClient, StatusKYC } from "@prisma/client";
+import { PrismaClient, StatusKYC, USERROL } from "@prisma/client";
 
 export const getUserById = async (id: number, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
@@ -28,7 +28,7 @@ export const findUsername = async (userName: string, prisma: PrismaClient) => {
 
 export const updateUser = async (
   id: number,
-  data: { email?: string; password?: string; clientSecret?: string,authToken?:string,newsletter?:boolean},
+  data: { email?: string; password?: string; clientSecret?: string,authToken?:string,newsletter?:boolean,userRol?:USERROL},
   prisma: PrismaClient
 ) => {
   return await prisma.user.update({

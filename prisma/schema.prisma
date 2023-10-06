@@ -10,11 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Admins {
-  user_id Int  @id
-  user    User @relation(fields: [user_id], references: [id])
-}
-
 model User {
   id             Int          @id @default(autoincrement())
   email          String       @unique
@@ -26,12 +21,12 @@ model User {
   newsletter     Boolean?
   kycPassed      Boolean?
   clientSecret   String?
+  userRol        USERROL?
   orders         Orders[]
   projects       Projects[]
   pagos          Pagos[]
   kycInfo        KycInfo?
   OrdersXREN     OrdersXREN[]
-  Admins         Admins[]
 }
 
 model Templates {
@@ -230,6 +225,11 @@ enum Estado {
   NO_COMPLETADO
   CERRADO
   TERMINADO
+}
+enum USERROL {
+  CLIENT
+  ADMIN
+  SUPERADMIN
 }
 
 enum RolImage {

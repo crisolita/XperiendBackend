@@ -224,9 +224,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const USER = req.user as User;  
     const user= await getUserById(USER.id,prisma)
     const kycInfo=await getKycInfoByUser(USER.id,prisma)
-    const admin= await prisma.admins.findUnique({where:{user_id:user?.id}})
     const kycImages= await prisma.kycImages.findMany({where:{info_id:kycInfo?.id}})
-    return res.json({kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,isAdmin:admin? true: false})
+    return res.json({kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,rol:user?.userRol})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

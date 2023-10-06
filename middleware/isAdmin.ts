@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_PRIVATE_KEY } from "../utils/utils";
+import { getUserById } from "../service/user";
 
 export function isAdmin(req: Request, res: Response, next: NextFunction) {
   // @ts-ignore
@@ -17,9 +18,9 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 
     // @ts-ignore
     req.user = user;
-    const admin= await prisma.admins.findUnique({where:{user_id:user.id}})
+    const usuario= await getUserById(user.id,prisma)
 
-    if (!admin) return res.sendStatus(403);
+    if (usuario?.userRol!="ADMIN") return res.sendStatus(403);
 
     next();
   });

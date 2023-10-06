@@ -1,13 +1,12 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import { deleteImageAWS, getImage, uploadImage } from "../service/aws";
-import fetch from "node-fetch";
 import { getProjectById, updateEscenario, updateFechas, updateProject } from "../service/backoffice";
 import moment from "moment";
 import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { crearDocumentoDeCompra, getTemplates, isValidTemplate } from "../service/pandadoc";
-import { getAllUsers, getKycInfoByUser, getUserById, updateKyc } from "../service/user";
+import { getAllUsers, getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract } from "../service/web3";
 import { sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail } from "../service/mail";
@@ -67,7 +66,7 @@ export const convertFullName = (str: string) =>
       const {project_id,rol,image}=req.body;
       const project=await prisma.projects.findUnique({where:{id:project_id}})
       if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
-      const path=`${project.titulo}_${project_id}_${project.count_image? project.count_image+1 : 1}`
+      const path=`${project.titulo.replace(/\s/g, '_')}_${project_id}_${project.count_image? project.count_image+1 : 1}`
 
       await prisma.projectImages.create({data:{
         project_id:project_id,
@@ -401,33 +400,41 @@ export const manageSaleUser = async (req: Request, res: Response) => {
 
 
 ///Vistas
+// imagenes, escenario, cuenta, fechas,userSale
+
 
 export const getAllProjects= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
+    let data=[];
+    let escenario,fechas,cuenta,imagenes,userSale;
     const projects= await prisma.projects.findMany()
-    return res.json(projects)
-  } catch(e) {
-    console.log(e)
-    return res.status(500).json({error:e})
-    }  
-}
-export const getImagesByProject= async(req:Request,res:Response) => {
-  try {    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const {project_id}=req.body;
-    let images:string[]=[]
-    const paths= await prisma.projectImages.findMany({where: {project_id}})
-      for(let i=0;i<paths.length;i++) {
-        images.push(await getImage(paths[i].path))
+    for( let project of projects) {
+      escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
+      fechas= await prisma.gestion_fechas.findMany({where:{project_id:project.id}})
+      if (project.cuenta_id){
+        cuenta= await prisma.cuentas.findUnique({where:{id:project.cuenta_id}})
       }
-    return res.json(images)
-  } catch(e) {
+      userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
+      imagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
+      
+      data.push({
+        project,
+        escenario,
+        fechas,
+        cuenta,
+        imagenes,
+        userSale
 
+      })
+    }
+    return res.json(data)
+  } catch(e) {
     console.log(e)
     return res.status(500).json({error:e})
     }  
 }
+
 
 export const getCuentas= async(req:Request,res:Response) => {
   try {    // @ts-ignore
@@ -440,44 +447,10 @@ export const getCuentas= async(req:Request,res:Response) => {
     return res.status(500).json({error:e})
     }  
 }
-export const getCuentaByProject= async(req:Request,res:Response) => {
-  try {    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const {project_id}=req.body
-    const project= await getProjectById(project_id,prisma)
-    if(!project?.cuenta_id) return res.status(404).json({error:"Proyecto no tiene cuenta"})
-    const cuenta= await prisma.cuentas.findUnique({where:{id:project?.cuenta_id}})
-    return res.json(cuenta)
-  } catch(e) {
-    console.log(e)
-    return res.status(500).json({error:e})
-    }  
-}
-export const getEscenarioByProject= async(req:Request,res:Response) => {
-  try {    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const {project_id, escenario}=req.body
-    const escenarioEconomico= await prisma.escenario_economico.findFirst({where:{project_id,escenario}})
-    if(!escenarioEconomico) return res.status(404).json({error:"Escenario no encontrado"})
-    return res.json(escenarioEconomico)
-  } catch(e) {
-    console.log(e)
-    return res.status(500).json({error:e})
-    }  
-}
 
-export const getFechasByProject= async(req:Request,res:Response) => {
-  try {    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const {project_id}=req.body
-    const fechas= await prisma.gestion_fechas.findFirst({where:{project_id}})
-    if(!fechas) return res.status(404).json({error:"Fechas de gestion no encontradas"})
-    return res.json(fechas)
-  } catch(e) {
-    console.log(e)
-    return res.status(500).json({error:e})
-    }  
-}
+
+
+
 export const getTemplatesByPandaDoc= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
@@ -488,16 +461,7 @@ export const getTemplatesByPandaDoc= async(req:Request,res:Response) => {
     return res.status(500).json({error:e})
     }  
 }
-export const getUserSalesManage= async(req:Request,res:Response) => {
-  try {    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const data= await prisma.userManage.findMany()
-    return res.json(data)
-  } catch(e) {
-    console.log(e)
-    return res.status(500).json({error:e})
-    }  
-}
+
  
  
 
@@ -606,22 +570,11 @@ export const changeRolUser= async(req:Request,res:Response) => {
   try {    
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const {user_id, isAdmin} = req.body 
+    const {user_id, rol} = req.body 
     const usuario= await getUserById(user_id,prisma)
     let data;
     if(!usuario) return res.status(404).json({error:"Usuario no encontrado"})
-    const admin= await prisma.admins.findUnique({where:{user_id}})
-    if (isAdmin && admin) return res.json({error:"Admin ya existe"})
-    else if (!isAdmin && !admin) return res.json({error:"Admin no existe"})
-    else if(isAdmin && !admin) {
-        data= await prisma.admins.create({
-          data:{
-            user_id:usuario.id
-          }
-        })
-    } else if (!isAdmin &&  admin) {
-      data= await prisma.admins.delete({where:{user_id}})
-    }
+    await updateUser(user_id,{userRol:rol},prisma)
     return res.json(data)
 
   } catch(error) {

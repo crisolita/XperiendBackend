@@ -16,6 +16,7 @@ export const uploadImage = async (key:ArrayBuffer,ruta:string)=>{
     Bucket: 'xperiend-images',
     Key: `${ruta}.jpg`,
     Body: stream,
+    ACL:"public-read"
   };
   s3.upload(params, function(err:any, data:any) {
     if (err) {

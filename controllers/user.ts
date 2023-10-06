@@ -50,7 +50,8 @@ export const userRegisterController = async (req: Request, res: Response) => {
           password: bcrypt.hashSync(password, salt),
           userName:userName,
           referallFriend: referallUser? referallUser :null,
-          newsletter:newsletter
+          newsletter:newsletter,
+          userRol:"CLIENT"
         },
       });
         await sendWelcomeEmail(email,userName);
@@ -82,7 +83,8 @@ export const userGoogleController = async (req: Request, res: Response) => {
       user= await prisma.user.create({data:{
         email:response.data.email,
         googleID:response.data.id,
-        userName:userName
+        userName:userName,
+        userRol:"CLIENT"
       }})
       await sendWelcomeEmail(user.email,userName);
       res.status(200).json({email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,kycPaseed:user.kycPassed,  token: createJWT(user)});

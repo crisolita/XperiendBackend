@@ -21,7 +21,7 @@ model User {
   newsletter     Boolean?
   kycPassed      Boolean?
   clientSecret   String?
-  userRol        USERROL?
+  userRol        USERROL
   orders         Orders[]
   projects       Projects[]
   pagos          Pagos[]

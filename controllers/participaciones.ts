@@ -6,9 +6,10 @@ import { createCharge } from "../service/stripe";
 import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail } from "../service/mail";
-import {  crearDocumentoDeCompra, isCompleted } from "../service/pandadoc";
+import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, isCompleted } from "../service/pandadoc";
 import { getKycInfoByUser } from "../service/user";
 import fetch from "node-fetch";
+import { xperiendNFT } from "../service/web3";
 export const compraParticipacionStripe = async (req: Request, res: Response) => {
     try {
       // @ts-ignore
@@ -131,6 +132,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       case 'REINVERSION':
         break
         case 'INTERCAMBIO':
+          newOrder= await updateOrder(order.id,{status:"POR_INTERCAMBIAR"},prisma)
           break
     }  
 
@@ -140,4 +142,89 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       res.status(500).json( error );
     }
   };
+  export const createIntercambio = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {nftId}= req.body;
+    const exchange= await xperiendNFT.getExchange(nftId)
+    const kycInfo= await getKycInfoByUser(USER.id,prisma)
+    if(exchange.giver!==kycInfo?.wallet) return res.status(403).json({error:"Wallet no coincide"})
+    const project= await getProjectById(exchange.projectId.toString(),prisma)
+  if(!project || project.estado!="EN_PROCESO" || exchange.status!=1) return res.status(400).json({error:"Proyecto no encontrado o terminado"})
+    const gestion= await getGestionByProjectId(project.id,prisma)
+    const now= moment()
+    if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+
+    const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
+    if(!template) return res.status(404).json({error:"Template no encotrado"})
+
+    const doc= await crearDocumentoDeIntercambio(USER.id,project.id,nftId,template.id,prisma)
+    const order= await prisma.orders.create({data:{
+      tipo:"INTERCAMBIO",
+      user_id:USER.id,
+      project_id:exchange.project_id,
+      document_id:doc?.id,
+      status:"POR_FIRMAR",
+      cantidad:1,
+      nft_id:nftId,
+      url_sign:doc?.link
+    }})
+    res.json(order)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+
+  export const acceptIntercambioStripe = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {orderId,cvc,exp_month,exp_year,cardNumber}= req.body;
+    const order= await getOrderById(orderId,prisma)
+    if(!order) return res.status(404).json({error:"Orden no encotrada"})
+    const exchange= await xperiendNFT.getExchange(order.nft_id)
+    const project= await getProjectById(exchange.projectId.toString(),prisma)
+    if(!project || project.estado!="EN_PROCESO" || exchange.status!=1 || order.status!="POR_INTERCAMBIAR" || !project.precio_unitario) return res.status(400).json({error:"Proyecto no encontrado o terminado"})
+    const gestion= await getGestionByProjectId(project.id,prisma)
+    const now= moment()
+    if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+
+      /// Cargo en stripe
+      const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,project.precio_unitario*100,prisma)
+      if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
+    
+    const pago = await crearPago(USER.id,project.precio_unitario,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion a traves de intercambio",prisma)
+   
+      /// Generar o buscar el documento y enviarselo al nuevo usuario para que lo firme
+    res.json()
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const acceptIntercambioTransferencia = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {orderId}= req.body;
+    const order= await getOrderById(orderId,prisma)
+    if(!order) return res.status(404).json({error:"Orden no encotrada"})
+    const exchange= await xperiendNFT.getExchange(order.nft_id)
+    const project= await getProjectById(exchange.projectId.toString(),prisma)
+    if(!project || project.estado!="EN_PROCESO" || exchange.status!=1 || order.status!="POR_INTERCAMBIAR") return res.status(400).json({error:"Proyecto no encontrado o terminado"})
+
  
+    res.json(order)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };

@@ -99,6 +99,68 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,temp
           }
     }
 }
+export const crearDocumentoDeIntercambio= async (userId:number,project_id:number,nftId:number,template_id:string,prisma:PrismaClient) => {
+  const user= await getUserById(userId,prisma)
+  const project=await getProjectById(project_id,prisma)
+  if(user ) {
+          const kycInfo= await getKycInfoByUser(user?.id,prisma)
+
+      const documentCreateRequest: pd_api.DocumentCreateRequest = {
+          name: "Documento de Intercambio",
+          templateUuid:template_id,
+          tags: ["Esta es un intercambio"],
+          recipients: [
+            {
+              email: user.email,
+              firstName: kycInfo?.name,
+              lastName: kycInfo?.lastname,
+              role:"Client",
+              signingOrder: 1,
+            }
+          ],
+          "tokens": [
+            {
+                "name": "Client.Company",
+                "value": `nft id ${nftId}`
+            },
+            {
+                "name": "Client.FirstName",
+                "value": `${kycInfo?.name}`
+            },
+            {
+                "name": "Client.LastName",
+                "value": `${kycInfo?.lastname}`
+            },
+            {
+              "name": "project.name",
+              "value": `${project?.titulo}`
+          },
+          {
+            "name": "project.id",
+            "value": `${project?.id}`
+        }
+        ],
+        };
+        const document= await apiInstanceDocuments.createDocument({
+          documentCreateRequest: documentCreateRequest,
+        });
+        if(document.id){
+         const sure= await ensureSentDocument(document.id)
+          if(!sure) return undefined
+          const sent= await apiInstanceDocuments.sendDocument({
+                id: String(document.id),
+                documentSendRequest: {
+                  silent: true,
+                  subject: "Contrato de intercambio pendiente por firmar",
+                  message: "Para continuar con el proceso de intercambio usted debe firmar el siguiente contrato",
+                },
+              });
+              console.log(sent)
+              const doc= await apiInstanceDocuments.detailsDocument({id:document.id})
+              return {id:document.id,link:doc.recipients? doc.recipients[0].sharedLink : undefined}
+        }
+  }
+}
 export const getTemplates= async () => {
 return apiInstanceTemplate.listTemplates()
 }

@@ -231,7 +231,8 @@ export const convertFullName = (str: string) =>
         cantidad,
         precio_unitario,
         beneficioPorNFT,
-        proyectoReinversion,description,
+        proyectoReinversion,
+        description,
         recuperar_dinero_info
       }= req.body;
         const project= await getProjectById(project_id,prisma)

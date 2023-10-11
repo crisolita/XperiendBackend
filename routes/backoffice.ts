@@ -1,5 +1,5 @@
 import express from "express";
-import { addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getAllUsersByProject, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
@@ -30,6 +30,9 @@ router.get("/cuentas",getCuentas)
 
 router.get("/templates",getTemplatesByPandaDoc)
 router.get("/users",getAllUsersController)
+
+router.get("/usersByProject",getAllUsersByProject)
+
 
 
 

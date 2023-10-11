@@ -99,16 +99,16 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,temp
           }
     }
 }
-export const crearDocumentoDeIntercambio= async (userId:number,project_id:number,nftId:number,template_id:string,prisma:PrismaClient) => {
+export const crearDocumentoReclamacion= async (userId:number,project_id:number,template_id:string,prisma:PrismaClient) => {
   const user= await getUserById(userId,prisma)
   const project=await getProjectById(project_id,prisma)
   if(user ) {
           const kycInfo= await getKycInfoByUser(user?.id,prisma)
 
       const documentCreateRequest: pd_api.DocumentCreateRequest = {
-          name: "Documento de Intercambio",
+          name: "Documento de Reclamacion",
           templateUuid:template_id,
-          tags: ["Esta es un intercambio"],
+          tags: ["Esta es una reclamaciion"],
           recipients: [
             {
               email: user.email,
@@ -121,7 +121,7 @@ export const crearDocumentoDeIntercambio= async (userId:number,project_id:number
           "tokens": [
             {
                 "name": "Client.Company",
-                "value": `nft id ${nftId}`
+                "value": `${user.id}`
             },
             {
                 "name": "Client.FirstName",
@@ -151,6 +151,139 @@ export const crearDocumentoDeIntercambio= async (userId:number,project_id:number
                 id: String(document.id),
                 documentSendRequest: {
                   silent: true,
+                  subject: "Contrato de reclamacion pendiente por firmar",
+                  message: "Para continuar con el proceso de reclamar usted debe firmar el siguiente contrato",
+                },
+              });
+              console.log(sent)
+              const doc= await apiInstanceDocuments.detailsDocument({id:document.id})
+              return {id:document.id,link:doc.recipients? doc.recipients[0].sharedLink : undefined}
+        }
+  }
+}
+
+export const crearDocumentoReinversion= async (userId:number,project_id:number,template_id:string,prisma:PrismaClient) => {
+  const user= await getUserById(userId,prisma)
+  const project=await getProjectById(project_id,prisma)
+  if(user ) {
+          const kycInfo= await getKycInfoByUser(user?.id,prisma)
+
+      const documentCreateRequest: pd_api.DocumentCreateRequest = {
+          name: "Documento de Reinversion",
+          templateUuid:template_id,
+          tags: ["Esta es una reinversion"],
+          recipients: [
+            {
+              email: user.email,
+              firstName: kycInfo?.name,
+              lastName: kycInfo?.lastname,
+              role:"Client",
+              signingOrder: 1,
+            }
+          ],
+          "tokens": [
+            {
+                "name": "Client.Company",
+                "value": `${user.id}`
+            },
+            {
+                "name": "Client.FirstName",
+                "value": `${kycInfo?.name}`
+            },
+            {
+                "name": "Client.LastName",
+                "value": `${kycInfo?.lastname}`
+            },
+            {
+              "name": "project.name",
+              "value": `${project?.titulo}`
+          },
+          {
+            "name": "project.id",
+            "value": `${project?.id}`
+        }
+        ],
+        };
+        const document= await apiInstanceDocuments.createDocument({
+          documentCreateRequest: documentCreateRequest,
+        });
+        if(document.id){
+         const sure= await ensureSentDocument(document.id)
+          if(!sure) return undefined
+          const sent= await apiInstanceDocuments.sendDocument({
+                id: String(document.id),
+                documentSendRequest: {
+                  silent: true,
+                  subject: "Contrato de reinversion pendiente por firmar",
+                  message: "Para continuar con el proceso de reinversion usted debe firmar el siguiente contrato",
+                },
+              });
+              console.log(sent)
+              const doc= await apiInstanceDocuments.detailsDocument({id:document.id})
+              return {id:document.id,link:doc.recipients? doc.recipients[0].sharedLink : undefined}
+        }
+  }
+}
+export const crearDocumentoDeIntercambio= async (userId:number,userReceiverId:number,project_id:number,template_id:string,prisma:PrismaClient) => {
+  const user= await getUserById(userId,prisma)
+  const receiver= await getUserById(userReceiverId,prisma)
+  const project=await getProjectById(project_id,prisma)
+  if(user && receiver) {
+          const kycInfo= await getKycInfoByUser(user.id,prisma)
+          const infoUser2= await getKycInfoByUser(receiver.id,prisma)
+      const documentCreateRequest: pd_api.DocumentCreateRequest = {
+          name: "Documento de Intercambio",
+          templateUuid:template_id,
+          tags: ["Esta es un intercambio"],
+          recipients: [
+            {
+              email: user.email,
+              firstName: kycInfo?.name,
+              lastName: kycInfo?.lastname,
+              role:"Vendedor",
+              signingOrder: 1,
+            },
+            {
+              email: receiver.email,
+              firstName: infoUser2?.name,
+              lastName: infoUser2?.lastname,
+              role:"Comprador",
+              signingOrder: 2,
+            }
+          ],
+          "tokens": [
+            {
+                "name": "Client.Company",
+                "value": ``
+            },
+            {
+                "name": "Client.FirstName",
+                "value": `${kycInfo?.name}`
+            },
+            {
+                "name": "Client.LastName",
+                "value": `${kycInfo?.lastname}`
+            },
+            {
+              "name": "project.name",
+              "value": `${project?.titulo}`
+          },
+          {
+            "name": "project.id",
+            "value": `${project?.id}`
+        }
+        ],
+        };
+        const document= await apiInstanceDocuments.createDocument({
+          documentCreateRequest: documentCreateRequest,
+        });
+        if(document.id){
+         const sure= await ensureSentDocument(document.id)
+          if(!sure) return undefined
+          const sent= await apiInstanceDocuments.sendDocument({
+                id: String(document.id),
+                documentSendRequest: {
+                  silent: false,
                   subject: "Contrato de intercambio pendiente por firmar",
                   message: "Para continuar con el proceso de intercambio usted debe firmar el siguiente contrato",
                 },

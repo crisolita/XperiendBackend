@@ -20,7 +20,9 @@ export function isSuperAdmin(req: Request, res: Response, next: NextFunction) {
   
     const usuario= await getUserById(user.id,prisma)
 
-    if (usuario?.userRol!="SUPERADMIN") return res.sendStatus(403);
+    if (usuario?.userRol!="ADMIN") return res.sendStatus(403);
+    if (usuario?.email!="rodrigoloco.595@gmail.com") return res.sendStatus(403);
+
 
 
     next();

@@ -47,8 +47,9 @@ export const updateOrder = async (
     document_id?:string,
     status?:EstadoPagoYFirma,
     nft_id?:number,
-     cantidad?:number,
-     url_sign?:string
+    cantidad?:number,
+     url_sign?:string,
+     exchange_receiver?:number
    },
   prisma: PrismaClient
 ) => {

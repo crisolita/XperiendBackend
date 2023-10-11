@@ -5,10 +5,10 @@ import { getProjectById, updateEscenario, updateFechas, updateProject } from "..
 import moment from "moment";
 import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
-import { crearDocumentoDeCompra, getTemplates, isValidTemplate } from "../service/pandadoc";
+import { crearDocumentoDeCompra, crearDocumentoDeIntercambio, getTemplates, isValidTemplate } from "../service/pandadoc";
 import { getAllUsers, getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { ethers } from "ethers";
-import { saleContract } from "../service/web3";
+import { saleContract, xperiendNFT } from "../service/web3";
 import { sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail } from "../service/mail";
 
 export const convertFullName = (str: string) =>
@@ -362,21 +362,35 @@ export const manageSaleUser = async (req: Request, res: Response) => {
     const order= await getOrderById(order_id,prisma)
     if(!order) return res.status(404).json({error:"Orden no encontrada"})
     const project= await getProjectById(order.project_id,prisma)
-
+   let pago,template;
     if(status=='CONFIRMADO') {
-        if(order?.tipo!=="COMPRA" || !project || !project.precio_unitario || !amountUSD) return res.status(400).json({error:"No es una transaccion de venta y/o montos no definidos"})
+      if(order?.tipo=="COMPRA" ) { 
+        if(!project || !project.precio_unitario || !amountUSD) return res.status(400).json({error:"No es una transaccion de venta y/o montos no definidos"})
         const mod= amountUSD%project.precio_unitario
        const result= amountUSD/project.precio_unitario
         if(mod!=0) return res.status(400).json({error:"Monto no es relativo al precio unitario"})
-        const pago = await crearPago(order.user_id,amountUSD,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion",prisma)
-        const template_id=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"COMPRA"}})
+         pago = await crearPago(order.user_id,amountUSD,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion",prisma)
+         template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"COMPRA"}})
 
-        if(!template_id) return res.status(404).json({error:"No template id encontrado"})
+        if(!template) return res.status(404).json({error:"No template id encontrado"})
         
-      const docData= await crearDocumentoDeCompra(order.user_id,project.id,template_id.id,prisma)
+      const docData= await crearDocumentoDeCompra(order.user_id,project.id,template.id,prisma)
       if(!docData) return res.status(500).json({error:"Falla al crear documento"})
         const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR",cantidad:result},prisma)
         return res.status(200).json({pago,newOrder});
+      } else if (order?.tipo=="INTERCAMBIO") {
+        if(!project || !project.precio_unitario  || !order.exchange_receiver) return res.status(400).json({error:"No es una transaccion de usuario y/o montos definidos"})
+
+              pago = await crearPago(order.user_id,project.precio_unitario,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion por intercambio",prisma)
+              template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
+
+              if(!template) return res.status(404).json({error:"No template  encontrado"})
+            
+              const docData= await crearDocumentoDeIntercambio(order.user_id,order.exchange_receiver,project.id,template.id,prisma)
+              if(!docData) return res.status(500).json({error:"Falla al crear documento"})
+              const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR"},prisma)
+              return res.status(200).json({pago,newOrder});
+      }
     
     } else if(status=="CANCELADO"){
       const user= await getUserById(order.user_id,prisma)
@@ -398,7 +412,40 @@ export const manageSaleUser = async (req: Request, res: Response) => {
     res.status(500).json( error );
   }
 };
+//endpoint para gestionar que ya el admin ha pagado al vendedor por alguna participacion
+export const terminarIntercambio = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const {order_id}= req.body;
+    const order= await getOrderById(order_id,prisma)
+    if(!order || order.status!="FIRMADO_POR_ENTREGAR" || order.tipo!="INTERCAMBIO") return res.status(404).json({error:"Orden no encontrada"})
+    const endExchange= await xperiendNFT.endExchange(order.nft_id,order.exchange_receiver)
+    const updated= await updateOrder(order_id,{status:"PAGADO_Y_ENTREGADO_Y_FIRMADO"},prisma)
+    res.json({endExchange,updated})
+  }
+  catch ( error) {
+    console.log(error)
+    res.status(500).json( error );
+  }
+};
 
+export const cancelarIntercambio = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const {order_id}= req.body;
+    const order= await getOrderById(order_id,prisma)
+    if(!order || order.status!="FIRMADO_POR_ENTREGAR" || order.tipo!="INTERCAMBIO") return res.status(404).json({error:"Orden no encontrada"})
+    const cancelExchange= await xperiendNFT.cancelExchange(order.nft_id)
+    const updated= await updateOrder(order_id,{status:"PAGO_CANCELADO"},prisma)
+    res.json({cancelExchange,updated})
+  }
+  catch ( error) {
+    console.log(error)
+    res.status(500).json( error );
+  }
+};
 
 ///Vistas
 // imagenes, escenario, cuenta, fechas,userSale
@@ -559,6 +606,32 @@ const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
   } catch ( error) {
     console.log(error)
     await prisma.pagos.delete({where:{id:pago?.id}})
+    res.status(500).json( error );
+  }
+};
+export const getAllUsersByProject = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const {project_id}= req.body;
+    const orders= await prisma.orders.findMany({where:{project_id,tipo:"COMPRA",status:"PAGADO_Y_ENTREGADO_Y_FIRMADO"}})
+    
+    let data=[];
+    for (let order of orders) {
+      const kyc=await getKycInfoByUser(order.user_id,prisma)
+      const user= await getUserById(order.user_id,prisma)
+      data.push({
+        userId:order.user_id,
+       userName:user?.userName,
+        email: user?.email,
+        referrallFriend:user?.referallFriend,
+        newsletter:user?.newsletter,
+        kycInfo:kyc,
+      });
+    }
+    return res.status(200).json(data);
+  } catch ( error) {
+    console.log(error)
     res.status(500).json( error );
   }
 };

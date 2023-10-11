@@ -30,10 +30,10 @@ model User {
 }
 
 model Templates {
-  id            String       @id
+  id            String   @id
   project_id    Int
   document_type Tipo
-  project       Projects     @relation(fields: [project_id], references: [id])
+  project       Projects @relation(fields: [project_id], references: [id])
 }
 
 model KycInfo {
@@ -147,6 +147,7 @@ model Projects {
   Gestion_fechas        Gestion_fechas?
   userManage            UserManage[]
   Templates             Templates[]
+  NFT                   NFT[]
 }
 
 model ProjectImages {
@@ -165,19 +166,20 @@ model KycImages {
 }
 
 model Orders {
-  id          Int              @id @default(autoincrement())
-  tipo        Tipo
-  user_id     Int
-  project_id  Int
-  status      EstadoPagoYFirma
-  document_id String?
-  fecha       DateTime?
-  nft_id      Int?
-  cantidad Int
-  url_sign String?
-  nft         NFT?             @relation(fields: [nft_id], references: [id])
-  project     Projects?        @relation(fields: [project_id], references: [id])
-  user        User             @relation(fields: [user_id], references: [id])
+  id                Int              @id @default(autoincrement())
+  tipo              Tipo
+  user_id           Int
+  project_id        Int
+  status            EstadoPagoYFirma
+  document_id       String?
+  fecha             DateTime?
+  nft_id            Int?
+  cantidad          Int
+  url_sign          String?
+  exchange_receiver Int?
+  nft               NFT?             @relation(fields: [nft_id], references: [id])
+  project           Projects?        @relation(fields: [project_id], references: [id])
+  user              User             @relation(fields: [user_id], references: [id])
 }
 
 model OrdersXREN {
@@ -193,9 +195,11 @@ model OrdersXREN {
 }
 
 model NFT {
-  id     Int      @id
-  txHash String
-  orders Orders[]
+  id         Int       @id
+  txHash     String
+  project_id Int
+  project    Projects? @relation(fields: [project_id], references: [id])
+  orders     Orders[]
 }
 
 enum StatusKYC {
@@ -226,6 +230,7 @@ enum Estado {
   CERRADO
   TERMINADO
 }
+
 enum USERROL {
   CLIENT
   ADMIN
@@ -272,5 +277,3 @@ enum EstadoPagoYFirma {
   PAGO_DEVUELTO
   POR_INTERCAMBIAR
 }
-
-

@@ -6,7 +6,7 @@ import { createCharge } from "../service/stripe";
 import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail } from "../service/mail";
-import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, isCompleted } from "../service/pandadoc";
+import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, crearDocumentoReclamacion, crearDocumentoReinversion, isCompleted } from "../service/pandadoc";
 import { getKycInfoByUser } from "../service/user";
 import fetch from "node-fetch";
 import { xperiendNFT } from "../service/web3";
@@ -132,7 +132,6 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       case 'REINVERSION':
         break
         case 'INTERCAMBIO':
-          newOrder= await updateOrder(order.id,{status:"POR_INTERCAMBIAR"},prisma)
           break
     }  
 
@@ -158,19 +157,14 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const now= moment()
     if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
 
-    const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
-    if(!template) return res.status(404).json({error:"Template no encotrado"})
 
-    const doc= await crearDocumentoDeIntercambio(USER.id,project.id,nftId,template.id,prisma)
     const order= await prisma.orders.create({data:{
       tipo:"INTERCAMBIO",
       user_id:USER.id,
       project_id:exchange.project_id,
-      document_id:doc?.id,
       status:"POR_FIRMAR",
       cantidad:1,
       nft_id:nftId,
-      url_sign:doc?.link
     }})
     res.json(order)
     } catch ( error) {
@@ -202,7 +196,12 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const pago = await crearPago(USER.id,project.precio_unitario,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion a traves de intercambio",prisma)
    
       /// Generar o buscar el documento y enviarselo al nuevo usuario para que lo firme
-    res.json()
+      const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
+      if(!template) return res.status(404).json({error:"Template no encotrado"})
+  
+      const doc= await crearDocumentoDeIntercambio(order.user_id,USER.id,project.id,template.id,prisma)
+      const newOrder= await updateOrder(order.id,{status:"POR_FIRMAR",url_sign:doc?.link,document_id:doc?.id},prisma)
+    res.json(newOrder)
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -219,9 +218,90 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     if(!order) return res.status(404).json({error:"Orden no encotrada"})
     const exchange= await xperiendNFT.getExchange(order.nft_id)
     const project= await getProjectById(exchange.projectId.toString(),prisma)
-    if(!project || project.estado!="EN_PROCESO" || exchange.status!=1 || order.status!="POR_INTERCAMBIAR") return res.status(400).json({error:"Proyecto no encontrado o terminado"})
+    if(!project || project.estado!="EN_PROCESO" || exchange.status!=1 || order.status!="POR_INTERCAMBIAR" || !project.cuenta_id || !project.precio_unitario) return res.status(400).json({error:"Proyecto no encontrado o terminado"})
+    const cuenta= await getCuentaById(project.cuenta_id,prisma)
+    const gestion= await getGestionByProjectId(project.id,prisma)
+    const now= moment()
+    if(!cuenta) return res.status(404).json({error:"Cuenta para transferir no definida"})
+    if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+    await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT por intercambio")
 
- 
+    const newOrder= await updateOrder(order.id,{status:"PAGO_PENDIENTE",exchange_receiver:USER.id},prisma)
+    res.json(newOrder)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+
+  export const crearReclamar = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {nftId}= req.body;
+    const claim= await xperiendNFT.getClaim(nftId)
+    const nft= await prisma.nFT.findUnique({where:{id:nftId}})
+    if(!nft) return res.status(404).json({error:"NFT no encontrado"})
+    const project= await getProjectById(nft?.project_id,prisma)
+    if(!project || project.estado!="EN_PROCESO" || claim.status!=1) return res.status(404).json({error:"Proyecto no encontrado o terminado"})
+    const gestion= await getGestionByProjectId(project.id,prisma)
+    const now= moment()
+
+    if(!now.isAfter(moment(gestion?.fecha_reclamo)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+    const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"RECLAMACION"}})
+    if(!template) return res.status(404).json({error:"Template no encotrado"})
+
+    const doc= await crearDocumentoReclamacion(USER.id,project.id,template.id,prisma)
+
+    const order= await prisma.orders.create({data:{
+      tipo:"RECLAMACION",
+      user_id:USER.id,
+      project_id:project.id,
+      document_id:doc?.id,
+      url_sign:doc?.link,
+      status:"PAGO_PENDIENTE",
+      cantidad:1,
+      nft_id:nftId,
+    }})
+    res.json(order)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const crearReinversion = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {nftId}= req.body;
+    const reinvest= await xperiendNFT.getReinvest(nftId)
+    const nft= await prisma.nFT.findUnique({where:{id:nftId}})
+    if(!nft) return res.status(404).json({error:"NFT no encontrado"})
+    const project= await getProjectById(nft?.project_id,prisma)
+    if(!project || project.estado!="EN_PROCESO" || reinvest.status!=1) return res.status(404).json({error:"Proyecto no encontrado o terminado"})
+    const gestion= await getGestionByProjectId(project.id,prisma)
+    const now= moment()
+
+    if(!now.isBetween(moment(gestion?.fecha_inicio_reinversion),moment(gestion?.fecha_fin_reinversion)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+
+    const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"REINVERSION"}})
+    if(!template) return res.status(404).json({error:"Template no encotrado"})
+
+    const doc= await crearDocumentoReinversion(USER.id,project.id,template.id,prisma)
+    const order= await prisma.orders.create({data:{
+      tipo:"REINVERSION",
+      user_id:USER.id,
+      project_id:project.id,
+      status:"PAGO_PENDIENTE",
+      document_id:doc?.id,
+      url_sign:doc?.link,
+      cantidad:1,
+      nft_id:nftId,
+    }})
     res.json(order)
     } catch ( error) {
       console.log(error)

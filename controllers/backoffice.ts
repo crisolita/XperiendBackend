@@ -648,7 +648,7 @@ export const changeRolUser= async(req:Request,res:Response) => {
     const usuario= await getUserById(user_id,prisma)
     let data;
     if(!usuario) return res.status(404).json({error:"Usuario no encontrado"})
-    await updateUser(user_id,{userRol:rol},prisma)
+    data=await updateUser(user_id,{userRol:rol},prisma)
     return res.json(data)
 
   } catch(error) {

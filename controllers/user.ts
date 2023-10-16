@@ -13,7 +13,7 @@ import {
   updateUser,
 
 } from "../service/user";
-import { sendAuthEmail, sendWelcomeEmail } from "../service/mail";
+import { sendAuthEmail, sendWelcomeEmailConSubs, sendWelcomeEmailSinSubs } from "../service/mail";
 import { OAuth2Client } from 'google-auth-library';
 import axios from "axios";
 const client = new OAuth2Client({
@@ -54,7 +54,12 @@ export const userRegisterController = async (req: Request, res: Response) => {
           userRol:"CLIENT"
         },
       });
-        await sendWelcomeEmail(email,userName);
+      if(newsletter) {
+        await sendWelcomeEmailConSubs(email,userName);
+      } else {
+        await sendWelcomeEmailSinSubs(email,userName);
+      }
+        
         res.status(200).json(
         { email: email, referallCode:userName,userName:userName} 
       );
@@ -86,7 +91,7 @@ export const userGoogleController = async (req: Request, res: Response) => {
         userName:userName,
         userRol:"CLIENT"
       }})
-      await sendWelcomeEmail(user.email,userName);
+      await sendWelcomeEmailSinSubs(user.email,userName);
       res.status(200).json({email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,kycPaseed:user.kycPassed,  token: createJWT(user)});
     } else if (exist.email==response.data.email){
       res.status(200).json({email:exist.email,userid:exist.id,userName:exist.userName,referallFriend:exist.referallFriend,kycPassed:exist.kycPassed,  token: createJWT(exist)});
@@ -129,8 +134,8 @@ export const getRecoveryCode =async (req: Request, res: Response) => {
     const prisma = req.prisma as PrismaClient;
     const { email} = req?.body;
     const user = await getUserByEmail(email, prisma);
-    if (user) {
-      await sendAuthEmail(email, authCode);
+    if (user && user.userName) {
+      await sendAuthEmail(email, authCode,user.userName);
       await updateUser(user.id, {authToken:bcrypt.hashSync(authCode, salt)},prisma);
       return res.status(200).json(
        {
@@ -154,8 +159,8 @@ export const getAuthCode = async (req: Request, res: Response) => {
     const prisma = req.prisma as PrismaClient;
     const { email, password} = req?.body;
     const user = await getUserByEmail(email, prisma);
-    if (user && user.password && bcrypt.compareSync(password, user.password)) {
-      await sendAuthEmail(email, authCode);
+    if (user && user.password && bcrypt.compareSync(password, user.password) && user.userName) {
+      await sendAuthEmail(email, authCode,user.userName);
       await updateUser(user.id,{authToken:bcrypt.hashSync(authCode, salt)} ,prisma);
       return res.status(200).json(
        {
@@ -207,10 +212,10 @@ export const changeNewsletter = async (req: Request, res: Response) => {
     if(user?.newsletter) {
       userUpdate=await updateUser(USER.id,{newsletter:false},prisma)
     } else {
-      userUpdate=await updateUser(USER.id,{newsletter:false},prisma)
+      userUpdate=await updateUser(USER.id,{newsletter:true},prisma)
     }
       return res.status(200).json(
-       {email:user?.email,newsletter:user?.newsletter},
+       {email:user?.email,newsletter:userUpdate?.newsletter},
       );
   } catch(error) {
     console.log(error)

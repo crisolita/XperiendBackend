@@ -23,7 +23,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const template_id=await prisma.templates.findFirst({where:{project_id,document_type:"COMPRA"}})
 
       if(!template_id) return res.status(404).json({error:"No template id encontrado"})
-      if(!project || !gestion || !project.precio_unitario || !kycInfo?.wallet || !project.cantidadRestante || !gestion.fecha_fin_venta) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
+      if(!project || !gestion || !project.precio_unitario || !kycInfo?.wallet || !project.cantidadRestante || !gestion.fecha_fin_venta || !project.pagoTarjeta) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
       if(project.cantidadRestante<cantidad) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
       const fecha_abierto_por_usuario= await getFechaDeVentaInicial(kycInfo.wallet,project?.id,prisma)
       const now= moment()
@@ -65,7 +65,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const project=await getProjectById(project_id,prisma)
       const gestion= await getGestionByProjectId(project_id,prisma)
       const kycInfo= await getKycInfoByUser(USER.id,prisma)
-      if(!project || !gestion || !project.precio_unitario || !project.cuenta_id || !kycInfo?.wallet || !project.cantidadRestante || !gestion.fecha_fin_venta) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
+      if(!project || !gestion || !project.precio_unitario || !project.cuenta_id || !kycInfo?.wallet || !project.cantidadRestante || !gestion.fecha_fin_venta || !project.pagoTransferencia) return res.status(404).json({error:"Proyecto no encontrado o sin fechas asignadas"})
       const fecha_abierto_por_usuario= await getFechaDeVentaInicial(kycInfo.wallet,project?.id,prisma)
       const cuenta= await getCuentaById(project.cuenta_id,prisma)
       if(!cuenta) return res.status(404).json({error:"Cuenta bancaria no encontrada"})

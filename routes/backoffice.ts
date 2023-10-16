@@ -1,5 +1,5 @@
 import express from "express";
-import { addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getAllUsersByProject, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getAllUsersByProject, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
@@ -12,6 +12,8 @@ router.post("/create-project", isAdmin,createProject);
 router.get("/getProjects", getAllProjects);
 router.delete("/deleteImage",isAdmin,deleteImage)
 router.post("/addImage", isAdmin,addImage);
+router.post("/addDoc", isAdmin,addDoc);
+
 //gestion
 router.post("/updateEscenario", isAdmin,updateProjectEscenario);
 router.post("/updateFechas", isAdmin,updateProjectFechas);

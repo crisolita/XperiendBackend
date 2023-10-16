@@ -15,16 +15,3 @@ export const StakeContract= (new ethers.Contract(STAKE_CONTRACT_ADDRESS,STAKE_CO
 
 
 export const xperiendNFT= (new ethers.Contract(NFT_CONTRACT_ADDRESS,NFT_CONTRACT_ABI,signer)).connect(wallet)
-
-
-export const validateTx= async(hash:string,prisma:PrismaClient) => {
-  const apiUrl = `https://api.bscscan.com/api?module=transaction&action=gettxinfo&txhash=${hash}&apikey=${API_KEY_BSC}`;
-  axios.get(apiUrl)
-  .then((response) => {
-    const transactionDetails = response;
-    console.log('Detalles de la transacción:', transactionDetails);
-  })
-  .catch((error) => {
-    console.error('Error al consultar la transacción:', error);
-  });
-}

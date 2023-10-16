@@ -49,3 +49,22 @@ export const deleteImageAWS = async (key: string) => {
     console.error('Error al eliminar la imagen:', err);
   }
 };
+
+export const uploadDoc = async (key:ArrayBuffer,ruta:string)=>{
+  const stream = new Readable();
+  stream.push(Buffer.from(key));
+  stream.push(null);
+  const params = {
+    Bucket: 'xperiend-images',
+    Key: `${ruta}.pdf`,
+    Body: stream,
+    ACL:"public-read"
+  };
+  s3.upload(params, function(err:any, data:any) {
+    if (err) {
+      console.error('Error al subir la imagen:', err);
+    } else {
+      console.log('Imagen subida:', data.Location);
+    }
+  });
+}

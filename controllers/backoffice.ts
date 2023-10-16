@@ -1,6 +1,6 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
-import { deleteImageAWS, getImage, uploadImage } from "../service/aws";
+import { deleteImageAWS, getImage, uploadDoc, uploadImage } from "../service/aws";
 import { getProjectById, updateEscenario, updateFechas, updateProject } from "../service/backoffice";
 import moment from "moment";
 import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
@@ -63,26 +63,61 @@ export const convertFullName = (str: string) =>
   export const addImage= async(req:Request,res:Response) => {
     try {    // @ts-ignore
       const prisma = req.prisma as PrismaClient;
-      const {project_id,rol,image}=req.body;
+      const {project_id,images}=req.body;
       const project=await prisma.projects.findUnique({where:{id:project_id}})
       if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
-      const path=`${project.titulo.replace(/\s/g, '_')}_${project_id}_${project.count_image? project.count_image+1 : 1}`
 
-      await prisma.projectImages.create({data:{
-        project_id:project_id,
-        path:path,
-        rol:rol
-      }})
+      for (let image of images) {
+        const path=`${project.titulo.replace(/\s/g, '_')}_${project_id}_${project.count_image? project.count_image+1 : 1}`
+  
+        await prisma.projectImages.create({data:{
+          project_id:project_id,
+          path:path,
+          rol:image.rol
+        }})
+         // // Utiliza fetch aquí dentro
+         const data= Buffer.from(image.base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+  
+         await uploadImage(data,path)
+        await prisma.projects.update({
+          where:{id:project_id},
+          data:{
+          count_image:project.count_image? project.count_image+1:1}
+        })
+
+
+      }
+      return res.json({data:"Imagenes subidas con exito"})
+    } catch(e) {
+
+      console.log(e)
+      return res.status(500).json({error:e})
+      }  
+  }
+
+  ///Subir documentos asociados a proyectos
+  export const addDoc= async(req:Request,res:Response) => {
+    try {    // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const {project_id,rol,doc}=req.body;
+      const project=await prisma.projects.findUnique({where:{id:project_id}})
+      if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
+      const path=`${project.titulo.replace(/\s/g, '_')}_${project_id}_${rol}`
+      const exist= await prisma.projectDocs.findUnique({where:{path}})
+      if(!exist) {
+        await prisma.projectDocs.create({data:{
+          project_id:project_id,
+          path:path,
+          visible:false,
+          rol:rol
+        }})
+      }
        // // Utiliza fetch aquí dentro
-       const data= Buffer.from(image.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+       const data= Buffer.from(doc.replace(/^data:doc\/(pdf);base64,/, ''),'base64')
 
-       await uploadImage(data,path)
-      await prisma.projects.update({
-        where:{id:project_id},
-        data:{
-        count_image:project.count_image? project.count_image+1:1}
-      })
-      return res.json({data:"Imagen subida con exito"})
+       await uploadDoc(data,path)
+   
+      return res.json({data:"Documento subido con exito"})
     } catch(e) {
 
       console.log(e)
@@ -233,7 +268,10 @@ export const convertFullName = (str: string) =>
         beneficioPorNFT,
         proyectoReinversion,
         description,
-        recuperar_dinero_info
+        recuperar_dinero_info,
+        pagoTransferencia,
+        pagoTarjeta,
+        pagoCripto
       }= req.body;
         const project= await getProjectById(project_id,prisma)
         if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
@@ -244,7 +282,7 @@ export const convertFullName = (str: string) =>
           precio_unitario,
           beneficioPorNFT,
           proyectoReinversion,description,
-          recuperar_dinero_info},prisma)
+          recuperar_dinero_info,pagoTarjeta,pagoTransferencia,pagoCripto},prisma)
 
       return res.status(200).json(data);
     } catch ( error) {
@@ -545,6 +583,7 @@ export const getAllUsersController = async (req: Request, res: Response) => {
       data.push({
         userId:user.id,
        userName:user.userName,
+       googleId:user.googleID,
         email: user.email,
         referrallFriend:user.referallFriend,
         newsletter:user.newsletter,

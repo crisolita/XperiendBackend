@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { getKycInfoByUser, getUserById } from "../service/user";
-import { saleContract, validateTx } from "../service/web3";
+import { saleContract } from "../service/web3";
 import {ethers} from 'ethers'
 import { createCharge } from "../service/stripe";
 import { crearPago } from "../service/pagos";
@@ -30,7 +30,7 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
         const charge= await createCharge(user.id,cardNumber,exp_month,exp_year,cvc,amount,prisma)
         if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
       
-       pago = await crearPago(USER.id,Number(ethers.utils.formatEther(phase[0].price))*tokenAmount,"TARJETA_DE_CREDITO",new Date(),`Compra de ${amount} XREN`,prisma)
+       pago = await crearPago(USER.id,Number(ethers.utils.formatEther(phase[0].price))*tokenAmount,"TARJETA_DE_CREDITO",new Date(),`Compra de ${tokenAmount} XREN`,prisma)
       const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(tokenAmount.toString()),wallet)
       const order = await prisma.ordersXREN.create({
         data:{
@@ -85,31 +85,29 @@ return res.status(200).json(order);
     try {
       // @ts-ignore
       const prisma = req.prisma as PrismaClient;
-    //        // @ts-ignore
-    // const USER= req.user as User;
-    // //validar que cripto solo pueda ser USDT o BUSD
+           // @ts-ignore
+    const USER= req.user as User;
     const {tokenAmount,cripto,hash}= req.body;
-    // const user = await getUserById(USER.id, prisma)
-    // if(!user) return res.json({error:"Usuario no encontrado"})
-    // const phase= await saleContract.functions.getcurrentPhase()
-    
-    /// revisar el hash y validar la transaccion ?
-      await validateTx(hash,prisma)
-    // const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
-      
-    //   const pago = await crearPago(USER.id,amount,cripto=="USDT"? "USDT":"BUSD",new Date(),`Compra de ${amount} XREN`,prisma)
-    //   const order = await prisma.ordersXREN.create({
-    //     data:{
-    //       tipo:"COMPRA",
-    //       user_id:USER.id,
-    //       status:"PAGO_EXITOSO_ENTREGADO",
-    //       amount:amount,
-    //       hash:hash,
-    //       fecha:new Date()
-    //     }
-    //   })
-    //   await sendThanksBuyEmail(user.email,tokenAmount,`${cripto}`)
-    //   return res.status(200).json({ data:{pago,order} });
+    const user = await getUserById(USER.id, prisma)
+    if(!user) return res.json({error:"Usuario no encontrado"})
+        const phase= await saleContract.functions.getcurrentPhase()
+
+          const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
+
+      const pago = await crearPago(USER.id,tokenAmount,cripto=="USDT"? "USDT":"BUSD",new Date(),`Compra de ${tokenAmount} XREN`,prisma)
+      const order = await prisma.ordersXREN.create({
+        data:{
+          tipo:"COMPRA",
+          user_id:USER.id,
+          status:"PAGO_EXITOSO_ENTREGADO",
+          unidades:tokenAmount,
+          amountUSD:amount,
+          hash:hash,
+          fecha:new Date()
+        }
+      })
+      await sendThanksBuyEmail(user.email,tokenAmount,`${cripto}`)
+      return res.status(200).json({pago,order});
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );

@@ -64,7 +64,7 @@ export const uploadDoc = async (key:ArrayBuffer,ruta:string)=>{
     if (err) {
       console.error('Error al subir la imagen:', err);
     } else {
-      console.log('Imagen subida:', data.Location);
+      console.log('Documento subido:', data.Location);
     }
   });
 }

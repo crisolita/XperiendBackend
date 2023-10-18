@@ -232,7 +232,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const user= await getUserById(USER.id,prisma)
     const kycInfo=await getKycInfoByUser(USER.id,prisma)
     const kycImages= await prisma.kycImages.findMany({where:{info_id:kycInfo?.id}})
-    return res.json({kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,rol:user?.userRol})
+    return res.json({kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,rol:user?.userRol,newsletter:user?.newsletter})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

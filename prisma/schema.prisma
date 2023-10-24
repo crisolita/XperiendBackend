@@ -21,9 +21,9 @@ model User {
   newsletter     Boolean?
   kycPassed      Boolean?
   clientSecret   String?
+  favoritos      Int[]
   userRol        USERROL
   orders         Orders[]
-  projects       Projects[]
   pagos          Pagos[]
   kycInfo        KycInfo?
   OrdersXREN     OrdersXREN[]
@@ -144,7 +144,6 @@ model Projects {
   pagoCripto            Boolean?
   images                ProjectImages[]
   cuenta                Cuentas?              @relation(fields: [cuenta_id], references: [id])
-  users                 User[]
   Orders                Orders[]
   Escenarios_economicos Escenario_economico[]
   Gestion_fechas        Gestion_fechas?
@@ -238,6 +237,7 @@ enum Estado {
   NUEVO
   PROXIMAMENTE
   PUBLICO
+  ABIERTO
   EN_PROCESO
   NO_COMPLETADO
   CERRADO

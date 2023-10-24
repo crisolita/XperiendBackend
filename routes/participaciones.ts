@@ -1,7 +1,8 @@
 import express from "express";
 import { authenticateToken } from "../middleware/auth";
-import { compraParticipacionStripe, compraParticipacionTransferenciaBancaria, createIntercambio, prueba  } from "../controllers/participaciones";
+import { allPagos, compraParticipacionStripe, compraParticipacionTransferenciaBancaria, createIntercambio, orders, ordersByUser, pagosByUser, prueba  } from "../controllers/participaciones";
 import { isKycRequired } from "../middleware/kycRequired";
+import { isAdmin } from "../middleware/isAdmin";
 
 const router = express.Router();
 
@@ -12,6 +13,11 @@ router.post("/compra-participacion-stripe", isKycRequired, compraParticipacionSt
 router.get("/prueba",prueba)
 router.post("/createExchange",createIntercambio)
 
+router.get('/orders',isAdmin,orders)
+router.get('/ordersByUser',authenticateToken,ordersByUser)
+
+router.get('/pagos',isAdmin,allPagos)
+router.get('/pagosByUser',authenticateToken,pagosByUser)
 
 export default router;
 

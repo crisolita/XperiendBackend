@@ -3,29 +3,33 @@ import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDe
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
+import Joivalidator from "express-joi-validation";
+import { querySchemaAddDoc, querySchemaAddImage, querySchemaCreate_project, querySchemaDeleteImage, querySchemaUpdateCuentaXREN, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferXren } from "../middleware/validation";
+
+const validator = Joivalidator.createValidator({passError: true});
 
 const router = express.Router();
 
 
 //proyectos
-router.post("/create-project", isAdmin,createProject);
+router.post("/create-project",validator.body(querySchemaCreate_project), isAdmin,createProject);
 router.get("/getProjects", getAllProjects);
-router.delete("/deleteImage",isAdmin,deleteImage)
-router.post("/addImage", isAdmin,addImage);
-router.post("/addDoc", isAdmin,addDoc);
+router.delete("/deleteImage",validator.body(querySchemaDeleteImage),isAdmin,deleteImage)
+router.post("/addImage", validator.body(querySchemaAddImage),isAdmin,addImage);
+router.post("/addDoc",validator.body(querySchemaAddDoc), isAdmin,addDoc);
 
 //gestion
-router.post("/updateEscenario", isAdmin,updateProjectEscenario);
-router.post("/updateFechas", isAdmin,updateProjectFechas);
+router.post("/updateEscenario",validator.body(querySchemaUpdateProjectEscenario), isAdmin,updateProjectEscenario);
+router.post("/updateFechas",validator.body(querySchemaUpdateProjectFechas), isAdmin,updateProjectFechas);
 
-router.put("/updateCuenta",isAdmin,updateProjectCuenta);
-router.put("/updateProject", isAdmin,updateProjectController);
-router.put("/updateEstado", isAdmin,updateProjectEstado);
+router.put("/updateCuenta",validator.body(querySchemaUpdateProjectCuentas),isAdmin,updateProjectCuenta);
+router.put("/updateProject",validator.body(querySchemaUpdateProject), isAdmin,updateProjectController);
+router.put("/updateEstado",validator.body(querySchemaUpdateProjectEstado), isAdmin,updateProjectEstado);
 
 
-router.post("/manageUserSale",isAdmin,manageSaleUser);
+router.post("/manageUserSale",validator.body(querySchemaUpdateProjectUserSaleManage),isAdmin,manageSaleUser);
 
-router.post("/updatetemplate",isAdmin,updateProjectTemplateDocs);
+router.post("/updatetemplate",validator.body(querySchemaUpdateProjectTemplate),isAdmin,updateProjectTemplateDocs);
 
 ///vistas
 router.get("/cuentas",getCuentas)
@@ -39,8 +43,8 @@ router.get("/usersByProject",getAllUsersByProject)
 
 
 //Compra XREN
-router.post("/cuentaXREN",selectCuentaBancariaXREN);
-router.put("/updateTransferenciaXREN",authenticateToken,cambiarStatusDeTransferenciaParaXREN)
+router.post("/cuentaXREN",validator.body(querySchemaUpdateCuentaXREN),selectCuentaBancariaXREN);
+router.put("/updateTransferenciaXREN",validator.body(querySchemaUpdateTransferXren),isAdmin,cambiarStatusDeTransferenciaParaXREN)
 
 
 //gestion KYC

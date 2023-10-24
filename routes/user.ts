@@ -8,6 +8,8 @@ import {
   userGoogleController,
   changeNewsletter,
   getUserInfo,
+  setFavorite,
+  getFavorites,
   
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
@@ -38,4 +40,6 @@ router.post("/getAuth",validator.body(querySchemaUGetAuth),getAuthCode)
 router.post("/googleAuth", userGoogleController);
 router.put("/changeNewsletter",authenticateToken,changeNewsletter)
 
+router.put('/setFav',authenticateToken,setFavorite)
+router.get('/getFavs',authenticateToken,getFavorites)
 export default router;

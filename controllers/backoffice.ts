@@ -3,14 +3,13 @@ import { Request, Response } from "express";
 import { deleteImageAWS, getImage, uploadDoc, uploadImage } from "../service/aws";
 import { getProjectById, updateEscenario, updateFechas, updateProject } from "../service/backoffice";
 import moment from "moment";
-import { getCuentaById, getOrderById, updateOrder } from "../service/participaciones";
+import {  getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { crearDocumentoDeCompra, crearDocumentoDeIntercambio, getTemplates, isValidTemplate } from "../service/pandadoc";
 import { getAllUsers, getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract, xperiendNFT } from "../service/web3";
 import { sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail } from "../service/mail";
-import { CANCELLED } from "dns";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -317,6 +316,10 @@ export const convertFullName = (str: string) =>
           break;
           case "PUBLICO":
             if(estado!=="EN_PROCESO" || estado!=="NO_COMPLETADO") return res.status(400).json({error:"Estado incorrecto"})
+            data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
+          break;
+          case "ABIERTO":
+            if(estado!=="PUBLICO" ) return res.status(400).json({error:"Estado incorrecto"})
             data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "EN_PROCESO":
@@ -662,7 +665,6 @@ export const getAllUsersByProject = async (req: Request, res: Response) => {
     
     let data=[];
     for (let order of orders) {
-      const kyc=await getKycInfoByUser(order.user_id,prisma)
       const user= await getUserById(order.user_id,prisma)
       data.push({
         userId:order.user_id,
@@ -670,7 +672,6 @@ export const getAllUsersByProject = async (req: Request, res: Response) => {
         email: user?.email,
         referrallFriend:user?.referallFriend,
         newsletter:user?.newsletter,
-        kycInfo:kyc,
       });
     }
     return res.status(200).json(data);

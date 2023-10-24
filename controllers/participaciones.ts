@@ -28,7 +28,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const fecha_abierto_por_usuario= await getFechaDeVentaInicial(kycInfo.wallet,project?.id,prisma)
       const now= moment()
 
-      if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="PUBLICO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
+      if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
         /// Cargo en stripe
         const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,project.precio_unitario*100*cantidad.toString(),prisma)
         if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
@@ -72,7 +72,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       if(project.cantidadRestante<cantidad) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
       const now= moment()
     console.log(fecha_abierto_por_usuario,gestion.fecha_fin_venta)
-      if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="PUBLICO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
+      if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
       await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario*cantidad,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT")
         const order= await prisma.orders.create({
         data:{
@@ -303,6 +303,68 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       nft_id:nftId,
     }})
     res.json(order)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+
+  export const ordersByUser = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+           // @ts-ignore
+    const USER= req.user as User;
+    const orders= await prisma.orders.findMany({where:{user_id:USER.id}})
+    res.json(orders)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const orders = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const orders= await prisma.orders.findMany()
+      res.json(orders)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const allPagos = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    
+      const pagos= await prisma.pagos.findMany()
+      res.json(pagos)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const pagosByUser = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+            // @ts-ignore
+    const USER= req.user as User;
+      const pagos= await prisma.pagos.findMany({where:{user_id:USER.id}})
+      res.json(pagos)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const proyectoById = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const {project_id}= req.body;
+      const project= await getProjectById(project_id,prisma)
+      res.json(project)
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );

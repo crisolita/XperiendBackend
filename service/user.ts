@@ -1,4 +1,4 @@
-import { PrismaClient, StatusKYC, USERROL } from "@prisma/client";
+import { PrismaClient, Projects, StatusKYC, USERROL } from "@prisma/client";
 
 export const getUserById = async (id: number, prisma: PrismaClient) => {
   return await prisma.user.findUnique({

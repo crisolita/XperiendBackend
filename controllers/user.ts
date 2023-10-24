@@ -16,6 +16,7 @@ import {
 import { sendAuthEmail, sendWelcomeEmailConSubs, sendWelcomeEmailSinSubs } from "../service/mail";
 import { OAuth2Client } from 'google-auth-library';
 import axios from "axios";
+import { getProjectById } from "../service/backoffice";
 const client = new OAuth2Client({
   clientId: process.env.CLIENT_ID_GOOGLE,
   clientSecret: process.env.CLIENT_SECRET_GOOGLE,
@@ -230,9 +231,65 @@ export const getUserInfo = async (req: Request, res: Response) => {
     // @ts-ignore
     const USER = req.user as User;  
     const user= await getUserById(USER.id,prisma)
-    const kycInfo=await getKycInfoByUser(USER.id,prisma)
-    const kycImages= await prisma.kycImages.findMany({where:{info_id:kycInfo?.id}})
-    return res.json({kycInfo,kycImages,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,rol:user?.userRol,newsletter:user?.newsletter})
+
+    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,rol:user?.userRol,newsletter:user?.newsletter})
+  } catch(error) {
+    console.log(error)
+    return res.status(500).json({ error: error });
+  } 
+}
+
+export const getkycUser = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;  
+    const user= await getUserById(USER.id,prisma)
+    const kyc=await getKycInfoByUser(USER.id,prisma)
+    const kycImgs= await prisma.kycImages.findMany({where:{info_id:kyc?.id}})
+    return res.json({kyc,kycImgs})
+  } catch(error) {
+    console.log(error)
+    return res.status(500).json({ error: error });
+  } 
+}
+
+export const setFavorite = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;  
+    const {project_id}=req.body
+    let user= await getUserById(USER.id,prisma)
+    if(!user) return res.status(404).json({error:"Usuario no encontrado"})
+    const project= await getProjectById(project_id,prisma)
+  if(!project)return res.status(404).json({error:"Proyecto no encontrado"})
+     user= await prisma.user.update({where:{id:USER.id},data:{favoritos:[...user.favoritos,project_id]}})
+    return res.json(user.favoritos)
+  } catch(error) {
+    console.log(error)
+    return res.status(500).json({ error: error });
+  } 
+}
+export const getFavorites = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;  
+    let user= await getUserById(USER.id,prisma)
+    if(!user) return res.status(404).json({error:"Usuario no encontrado"})
+
+    let data=[];
+    for (let favorito of user.favoritos) {
+      const project= await getProjectById(favorito,prisma)
+      data.push({
+       project
+      });
+    }
+    return res.json(data)
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

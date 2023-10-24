@@ -20,10 +20,11 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
     const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
     if(!wallet) return res.status(404).json({error:"Wallet no econtrada"})
     const phase= await saleContract.functions.getcurrentPhase()
-  
+    console.log('he llegado aca soy phase',phase,"waller",wallet)
+
 
     const amount=Number(ethers.utils.formatEther(phase[0].price))*100*tokenAmount
-
+      console.log('he llegado aca soy amount',amount)
     if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
 
       // Cargo en stripe
@@ -108,6 +109,30 @@ return res.status(200).json(order);
       })
       await sendThanksBuyEmail(user.email,tokenAmount,`${cripto}`)
       return res.status(200).json({pago,order});
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const ordersXRENByUser = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+           // @ts-ignore
+    const USER= req.user as User;
+    const orders= await prisma.ordersXREN.findMany({where:{user_id:USER.id}})
+    res.json(orders)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const ordersXREN = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const orders= await prisma.ordersXREN.findMany()
+      res.json(orders)
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );

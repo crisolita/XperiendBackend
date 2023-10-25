@@ -263,6 +263,10 @@ export const convertFullName = (str: string) =>
       const prisma = req.prisma as PrismaClient;
       const {
         project_id,
+        titulo,
+        ubicacion,
+        definicion, 
+        resumen,
         rentabilidad_estimada,
         beneficio_estimado,
         plazo_ejecucion,
@@ -279,7 +283,10 @@ export const convertFullName = (str: string) =>
       }= req.body;
         const project= await getProjectById(project_id,prisma)
         if(!project) return res.status(404).json({error:"Proyecto no encontrado"})
-        const data= await updateProject(project_id,{rentabilidad_estimada,
+        const data= await updateProject(project_id,{ titulo,
+          ubicacion,
+          definicion, 
+          resumen,rentabilidad_estimada,
           beneficio_estimado,
           plazo_ejecucion,
           ejecucion_proyecto, cantidadInicial:cantidad,cantidadRestante:cantidad,

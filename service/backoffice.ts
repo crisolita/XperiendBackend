@@ -54,6 +54,10 @@ export const updateProject = async (
   id: number,
   data:{
     cuenta_id?: number,
+    titulo?:string,
+    ubicacion?:string,
+    definicion?:string, 
+    resumen?:string,
     cantidadInicial?:number,
     cantidadRestante?:number,
     precio_unitario?:number,

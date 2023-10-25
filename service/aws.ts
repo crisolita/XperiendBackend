@@ -16,7 +16,7 @@ export const uploadImage = async (key:ArrayBuffer,ruta:string)=>{
     Bucket: 'xperiend-images',
     Key: `${ruta}.jpg`,
     Body: stream,
-    ACL:"public-read"
+    ACL:"private"
   };
   s3.upload(params, function(err:any, data:any) {
     if (err) {
@@ -58,7 +58,7 @@ export const uploadDoc = async (key:ArrayBuffer,ruta:string)=>{
     Bucket: 'xperiend-images',
     Key: `${ruta}.pdf`,
     Body: stream,
-    ACL:"public-read"
+    ACL:"private"
   };
   s3.upload(params, function(err:any, data:any) {
     if (err) {

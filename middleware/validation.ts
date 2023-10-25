@@ -108,6 +108,10 @@ export const querySchemaCreate_project = Joi.object({
 
     export const querySchemaUpdateProject = Joi.object({
       project_id:Joi.number().required(), 
+      titulo:Joi.string(),
+      ubicacion:Joi.string(),
+      definicion:Joi.string(), 
+      resumen:Joi.string(),
       rentabilidad_estimada:Joi.number(),
       beneficio_estimado:Joi.number(),
       plazo_ejecucion:Joi.number(),

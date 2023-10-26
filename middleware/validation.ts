@@ -117,8 +117,8 @@ export const querySchemaCreate_project = Joi.object({
       plazo_ejecucion:Joi.number(),
       ejecucion_proyecto:Joi.number(),
       cantidad:Joi.number(),
-      precio_unitario:Joi.number,
       beneficioPorNFT:Joi.number(),
+      precio_unitario:Joi.number(),
       proyectoReinversion:Joi.number(),
       description:Joi.string(),
       recuperar_dinero_info:Joi.string(),
@@ -163,7 +163,7 @@ export const querySchemaCreate_project = Joi.object({
         success:Joi.boolean().required()
       });
 
-      export const querySchemaUpdateKyc= Joi.object({
+      export const querySchemaUpdateKycStatus= Joi.object({
         kyc_id:Joi.number().required(),
         status:Joi.string().valid('APROBADO',
           'RECHAZADO',
@@ -186,7 +186,37 @@ export const querySchemaCreate_project = Joi.object({
           'PAGO_DEVUELTO',
           'POR_INTERCAMBIAR').required(),fecha_recibido:Joi.date(),fecha_devolucion:Joi.date()
        });
- 
+
+       export const querySchemaCompraXRENTransferencia= Joi.object({
+       tokenAmount:Joi.number().required()
+       });
+       export const querySchemaCompraXRENCripto= Joi.object({
+        tokenAmount:Joi.number().required(),
+        cripto:Joi.string().valid('BUSD','USDT').required(),
+        hash:Joi.string()
+        });
+      export const querySchemaCompraXRENStripe= Joi.object({
+          tokenAmount:Joi.number().required(),cardNumber:Joi.string().min(13).required(),exp_month:Joi.string().required(),exp_year:Joi.string().required(),cvc:Joi.string().required().max(3),
+          });
+      export const querySchemaSubmitKyc= Joi.object({
+        name:Joi.string().required(),
+        lastname:Joi.string().required(),
+        country_born:Joi.string().required(),
+        birth:Joi.date().required(),
+        telf:Joi.string().required(),
+        address:Joi.string().required(),
+        document:Joi.string().required(),
+        document_number:Joi.string().required(),
+        city:Joi.string().required(),
+        postalCode:Joi.number().required(),
+        state:Joi.string().required(),
+        country:Joi.string().required(),
+        foto_dni_frontal:Joi.string().required(),
+        foto_dni_trasera:Joi.string().required(),
+        wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required()
+      });
+    
+   
 
 
 

@@ -3,8 +3,8 @@ import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDe
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
+import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaUpdateCuentaXREN, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
 import Joivalidator from "express-joi-validation";
-import { querySchemaAddDoc, querySchemaAddImage, querySchemaCreate_project, querySchemaDeleteImage, querySchemaUpdateCuentaXREN, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferXren } from "../middleware/validation";
 
 const validator = Joivalidator.createValidator({passError: true});
 
@@ -48,15 +48,15 @@ router.put("/updateTransferenciaXREN",validator.body(querySchemaUpdateTransferXr
 
 
 //gestion KYC
-router.put("/manageKYC",updateKYCStatus)
+router.put("/manageKYC",validator.body(querySchemaUpdateKycStatus),updateKYCStatus)
 
 
 ///gestion usuarios
-router.post('/changeAdmin',isSuperAdmin,changeRolUser)
+router.post('/changeAdmin',validator.body(querySchemaChangeAdmin),isSuperAdmin,changeRolUser)
 
 
 /// gestion compra participaciones
-router.put("/update-transferencia-participacion",isAdmin,cambiarStatusDeTransferenciaParticipacion)
+router.put("/update-transferencia-participacion",validator.body(querySchemaUpdateTransferParticipaciones),isAdmin,cambiarStatusDeTransferenciaParticipacion)
 
 
 

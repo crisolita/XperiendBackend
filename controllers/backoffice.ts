@@ -591,10 +591,7 @@ export const getAllUsersController = async (req: Request, res: Response) => {
     let kycImages;
     let data=[];
     for (let user of users) {
-      const kyc=await getKycInfoByUser(user.id,prisma)
-      if(kyc) {
-         kycImages= await prisma.kycImages.findMany({where:{info_id:kyc.id}})
-      }
+     
       data.push({
         userId:user.id,
        userName:user.userName,
@@ -602,8 +599,7 @@ export const getAllUsersController = async (req: Request, res: Response) => {
         email: user.email,
         referrallFriend:user.referallFriend,
         newsletter:user.newsletter,
-        kycInfo:kyc,
-        kycImages
+     
       });
     }
     return res.status(200).json(data);

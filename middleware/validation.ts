@@ -50,7 +50,7 @@ export const querySchemaCreate_project = Joi.object({
               'DNIFRONTAL',
               'DNITRASERA',
               'USERDNI').required(),
-            base64: Joi.number().required(),
+            base64: Joi.string().required(),
           })
         ).required(),
     });
@@ -66,7 +66,7 @@ export const querySchemaCreate_project = Joi.object({
             'PLANOS',
             'ECONOMICO',
             'DESCARGABLE').required(),
-          base64: Joi.number().required(),
+          base64: Joi.string().required(),
         })
       ).required(),
     });

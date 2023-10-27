@@ -64,7 +64,7 @@ export const convertFullName = (str: string) =>
     try {    // @ts-ignore
       const prisma = req.prisma as PrismaClient;
       const {project_id,images}=req.body;
-      const project=await prisma.projects.findUnique({where:{id:project_id}})
+      let project=await prisma.projects.findUnique({where:{id:project_id}})
       if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
 
       for (let image of images) {
@@ -81,7 +81,7 @@ export const convertFullName = (str: string) =>
          const data= Buffer.from(image.base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
   
          await uploadImage(data,path)
-        await prisma.projects.update({
+        project=await prisma.projects.update({
           where:{id:project_id},
           data:{
           count_image:project.count_image? project.count_image+1:1}

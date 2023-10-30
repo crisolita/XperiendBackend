@@ -625,13 +625,17 @@ export const gestionVentaXREN=async(req:Request, res:Response) => {
    const prisma = req.prisma as PrismaClient;
    const {numero,banco,  pagoTransferencia,
     pagoTarjeta,
-    pagoCripto}=req.body;
+    pagoCripto,concepto_bancario}=req.body;
    const exist = await prisma.gestionXREN.findFirst() 
    let gestionXREN
   if (!exist && numero && banco) {
-    gestionXREN= await createGestionXREN(req.body,prisma)
+    gestionXREN= await createGestionXREN({numero,banco,pagoTransferencia,
+      pagoTarjeta,
+      pagoCripto,concepto_bancario},prisma)
   } else if(exist) {
-    gestionXREN= await updateGestionXREN(exist.id,req.body,prisma)
+    gestionXREN= await updateGestionXREN(exist.id,{numero,banco,pagoTransferencia,
+      pagoTarjeta,
+      pagoCripto,concepto_bancario},prisma)
   }
 
   return res.json(gestionXREN)

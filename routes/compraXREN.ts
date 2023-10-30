@@ -18,7 +18,7 @@ router.post("/cripto", validator.body(querySchemaCompraXRENCripto),authenticateT
 router.post("/stripe", validator.body(querySchemaCompraXRENStripe),isKycRequired,compraXRENStripe);
 
 router.get('/orders',isAdmin,ordersXREN)
-router.get('/gestionXREN',authenticateToken,getGestionVentaXREN)
+router.get('/gestionXREN',getGestionVentaXREN)
 
 router.get('/ordersByUser',authenticateToken,ordersXRENByUser)
 

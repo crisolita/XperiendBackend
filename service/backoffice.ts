@@ -85,7 +85,8 @@ export const createGestionXREN = async (
   data:{
  numero?:string, banco?:string,pagoTransferencia?:boolean,
  pagoTarjeta?:boolean,
- pagoCripto?:boolean
+ pagoCripto?:boolean,
+ concepto_bancario?:string
   },
   prisma: PrismaClient
 ) => {
@@ -100,7 +101,8 @@ export const updateGestionXREN = async (
   data:{
  numero?:string, banco?:string,pagoTransferencia?:boolean,
  pagoTarjeta?:boolean,
- pagoCripto?:boolean
+ pagoCripto?:boolean,
+ concepto_bancario?:string
   },
   prisma: PrismaClient
 ) => {

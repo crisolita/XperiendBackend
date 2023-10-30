@@ -247,15 +247,17 @@ export const getkycUser = async (req: Request, res: Response) => {
  
     const {user_id}= req.body;
     const user= await getUserById(user_id,prisma)
-    const kyc=await getKycInfoByUser(user_id,prisma)
-    const kycImgsKey= await prisma.kycImages.findMany({where:{info_id:kyc?.id}})
     let kycImgs=[];
-    for (let key of kycImgsKey) {
-      const ruta= await getImage(key.path)
-      kycImgs.push({
-        rol:key.rol,
-        path:ruta
-      })
+    const kyc=await getKycInfoByUser(user_id,prisma)
+    if(kyc) {
+      const kycImgsKey= await prisma.kycImages.findMany({where:{info_id:kyc?.id}})
+      for (let key of kycImgsKey) {
+        const ruta= await getImage(key.path)
+        kycImgs.push({
+          rol:key.rol,
+          path:ruta
+        })
+      }
     }
     return res.json({kyc,kycImgs})
   } catch(error) {

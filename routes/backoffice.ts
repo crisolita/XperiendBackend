@@ -3,7 +3,7 @@ import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDe
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
-import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaUpdateCuentaXREN, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
+import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaGetKYCbyUser, querySchemaUpdateCuentaXREN, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
 import Joivalidator from "express-joi-validation";
 import { getkycUser } from "../controllers/user";
 
@@ -34,7 +34,7 @@ router.post("/updatetemplate",validator.body(querySchemaUpdateProjectTemplate),i
 
 ///vistas
 router.get("/cuentas",getCuentas)
-router.get("/getKycByUser",isAdmin,getkycUser)
+router.get("/getKycByUser",validator.body(querySchemaGetKYCbyUser),isAdmin,getkycUser)
 
 router.get("/templates",getTemplatesByPandaDoc)
 router.get("/users",getAllUsersController)

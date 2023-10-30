@@ -41,27 +41,54 @@ try {
       }
      })
 
-     const images=[foto_dni_frontal.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')]
     
-     // hacer loop para subirlas a ipfs y guardar la data 
-     for (let i=0;i<images.length;i++) {
-      const path=`kyc_image_${user.id}_${info.id}_${i==0?"DNIFRONTAL":"DNITRASERA"}`
-          // // Utiliza fetch aquí dentro
-        const data= Buffer.from(images[i],'base64')
-          await uploadImage(data,path)
-          const img= await prisma.kycImages.create({
-          data:{
-            info_id:info.id,
-            path:path,
-            rol:i==0? "DNIFRONTAL" : "DNITRASERA"
-          }
-        })
-        dataImages.push(img)
+     let base64Frontal,pathFrontal,pathTrasera,base64Trasera
+     if(document=="DNI" && foto_dni_frontal && foto_dni_trasera) {
+       pathFrontal=`kyc_image_${user.id}_${info.id}_${"DNIFRONTAL"}`
+       pathTrasera=`kyc_image_${user.id}_${info.id}_${"DNITRASERA"}`
+
+       base64Frontal= foto_dni_frontal.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')
+       base64Trasera= foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')
+       let data= Buffer.from(base64Frontal,'base64')
+       await uploadImage(data,pathFrontal)
+       let img= await prisma.kycImages.create({
+       data:{
+         info_id:info.id,
+         path:pathFrontal,
+         rol:"DNIFRONTAL"
+       }
+     })
+     dataImages.push(img)
+      data= Buffer.from(base64Trasera,'base64')
+     await uploadImage(data,pathTrasera)
+      img= await prisma.kycImages.create({
+     data:{
+       info_id:info.id,
+       path:pathTrasera,
+       rol:"DNITRASERA"
+     }
+   })
+   dataImages.push(img)
+     } else if (document=="PASSPORT" && foto_dni_frontal) {
+      pathFrontal=`kyc_image_${user.id}_${info.id}_${"DNIFRONTAL"}`
+
+      base64Frontal= foto_dni_frontal.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')
+      let data= Buffer.from(base64Frontal,'base64')
+      await uploadImage(data,pathFrontal)
+      let img= await prisma.kycImages.create({
+      data:{
+        info_id:info.id,
+        path:pathFrontal,
+        rol:"DNIFRONTAL"
+      }
+    })
+    dataImages.push(img)
+     } else {
+      return res.status(400).json({error:"No hay suficientes fotos de los documentos"})
      }
 
      return res.json({info,dataImages})
    }
-   
 
 } catch (e) {
   console.log(e)

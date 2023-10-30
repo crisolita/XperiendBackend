@@ -212,7 +212,7 @@ export const querySchemaCreate_project = Joi.object({
         state:Joi.string().required(),
         country:Joi.string().required(),
         foto_dni_frontal:Joi.string().required(),
-        foto_dni_trasera:Joi.string().required(),
+        foto_dni_trasera:Joi.string(),
         wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required()
       });
       export const querySchemaCompraPartStripe= Joi.object({
@@ -246,5 +246,7 @@ export const querySchemaCreate_project = Joi.object({
               .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"}),
               authCode:Joi.string().min(6).required()
                 });
-    
+                export const querySchemaGetKYCbyUser= Joi.object({
+                  user_id:Joi.number().required()
+                  });
 

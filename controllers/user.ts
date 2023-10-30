@@ -17,6 +17,7 @@ import { sendAuthEmail, sendWelcomeEmailConSubs, sendWelcomeEmailSinSubs } from 
 import { OAuth2Client } from 'google-auth-library';
 import axios from "axios";
 import { getProjectById } from "../service/backoffice";
+import { getImage } from "../service/aws";
 const client = new OAuth2Client({
   clientId: process.env.CLIENT_ID_GOOGLE,
   clientSecret: process.env.CLIENT_SECRET_GOOGLE,
@@ -93,9 +94,9 @@ export const userGoogleController = async (req: Request, res: Response) => {
         userRol:"CLIENT"
       }})
       await sendWelcomeEmailSinSubs(user.email,userName);
-      res.status(200).json({email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,kycPaseed:user.kycPassed,  token: createJWT(user)});
+      res.status(200).json({email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend,kycStatus:user.kycStatus,  token: createJWT(user)});
     } else if (exist.email==response.data.email){
-      res.status(200).json({email:exist.email,userid:exist.id,userName:exist.userName,referallFriend:exist.referallFriend,kycPassed:exist.kycPassed,  token: createJWT(exist)});
+      res.status(200).json({email:exist.email,userid:exist.id,userName:exist.userName,referallFriend:exist.referallFriend,kycStatus:exist.kycStatus,  token: createJWT(exist)});
     }    
       } catch ( error ) {
     console.log(error)
@@ -113,7 +114,7 @@ export const userLoginController = async (req: Request, res: Response) => {
     if (user ) {
       if (bcrypt.compareSync(authCode,user.authToken? user.authToken :"")) 
         return res.status(200).json(
-       {email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend, kycPassed:user.kycPassed, token: createJWT(user)} 
+       {email:user.email,userid:user.id,userName:user.userName,referallFriend:user.referallFriend, kycStatus:user.kycStatus, token: createJWT(user)} 
         );
       else
         return res.status(403).json({ error: "Token auth incorrecto." });
@@ -232,7 +233,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const USER = req.user as User;  
     const user= await getUserById(USER.id,prisma)
 
-    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycPassed:user?.kycPassed,rol:user?.userRol,newsletter:user?.newsletter})
+    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });
@@ -243,11 +244,19 @@ export const getkycUser = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    // @ts-ignore
-    const USER = req.user as User;  
-    const user= await getUserById(USER.id,prisma)
-    const kyc=await getKycInfoByUser(USER.id,prisma)
-    const kycImgs= await prisma.kycImages.findMany({where:{info_id:kyc?.id}})
+ 
+    const {user_id}= req.body;
+    const user= await getUserById(user_id,prisma)
+    const kyc=await getKycInfoByUser(user_id,prisma)
+    const kycImgsKey= await prisma.kycImages.findMany({where:{info_id:kyc?.id}})
+    let kycImgs=[];
+    for (let key of kycImgsKey) {
+      const ruta= await getImage(key.path)
+      kycImgs.push({
+        rol:key.rol,
+        path:ruta
+      })
+    }
     return res.json({kyc,kycImgs})
   } catch(error) {
     console.log(error)

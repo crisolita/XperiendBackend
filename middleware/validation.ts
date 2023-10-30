@@ -215,13 +215,36 @@ export const querySchemaCreate_project = Joi.object({
         foto_dni_trasera:Joi.string().required(),
         wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required()
       });
+      export const querySchemaCompraPartStripe= Joi.object({
+        cantidad:Joi.number().required() ,cardNumber:Joi.string().min(13).required(),exp_month:Joi.string().required(),exp_year:Joi.string().required(),cvc:Joi.string().required().max(3),
+        });
+        export const querySchemaCompraPartTransf= Joi.object({
+          project_id:Joi.number().required(),
+          cantidad:Joi.number().required()          });
+          export const querySchemaGetRecoveryCode= Joi.object({
+            email: Joi.string()
+            .email({ minDomainSegments: 2 })
+            .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"})    });
+
+              export const querySchemaChangePassword= Joi.object({
+                newPassword: Joi.string().required().pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?])[A-Za-z0-9`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?]{8,}$/)).messages({  'string.base': `Contraseña debe ser de tipo texto`,
+                'string.empty': `Contraseña no puede estar vacio`,
+                'string.min': `Contraseña debe tener al menos 8 caracteres`,
+                'string.required': `Contraseña es requerida`,
+              'string.pattern.base':"No cumple las condiciones de contraseña"}),
+              email: Joi.string()
+            .email({ minDomainSegments: 2 })
+            .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"}),
+            authCode:Joi.string().min(6).required()
+              });
+               export const querySchemaGoogleAuth= Joi.object({
+                token:Joi.string().required() 
+                });
+                export const querySchemaLogin= Joi.object({
+                email: Joi.string()
+              .email({ minDomainSegments: 2 })
+              .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"}),
+              authCode:Joi.string().min(6).required()
+                });
     
-   
-
-
-
-    
-    
-
-
 

@@ -358,15 +358,5 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       res.status(500).json( error );
     }
   };
-  export const proyectoById = async (req: Request, res: Response) => {
-    try {
-      // @ts-ignore
-      const prisma = req.prisma as PrismaClient;
-      const {project_id}= req.body;
-      const project= await getProjectById(project_id,prisma)
-      res.json(project)
-    } catch ( error) {
-      console.log(error)
-      res.status(500).json( error );
-    }
-  };
+
+

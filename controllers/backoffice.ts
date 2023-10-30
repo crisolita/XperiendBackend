@@ -1,7 +1,7 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import { deleteImageAWS, getImage, uploadDoc, uploadImage } from "../service/aws";
-import { getProjectById, updateEscenario, updateFechas, updateProject } from "../service/backoffice";
+import { createGestionXREN, getProjectById, updateEscenario, updateFechas, updateGestionXREN, updateProject } from "../service/backoffice";
 import moment from "moment";
 import {  getOrderById, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
@@ -508,7 +508,7 @@ export const getAllProjects= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     let data=[];
-    let escenario,fechas,cuenta,imagenes,userSale;
+    let escenario,fechas,cuenta,keyImagenes,userSale,imagenes=[];
     const projects= await prisma.projects.findMany()
     for( let project of projects) {
       escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
@@ -517,8 +517,15 @@ export const getAllProjects= async(req:Request,res:Response) => {
         cuenta= await prisma.cuentas.findUnique({where:{id:project.cuenta_id}})
       }
       userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
-      imagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
-      
+      keyImagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
+      for (let key of keyImagenes ){
+        const ruta= await getImage(key.path)
+        imagenes.push({
+          rol:key.rol,
+          id:key.id,
+          path:ruta
+        })
+      }
       data.push({
         project,
         escenario,
@@ -536,7 +543,7 @@ export const getAllProjects= async(req:Request,res:Response) => {
     }  
 }
 
-
+ 
 export const getCuentas= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
@@ -573,7 +580,9 @@ export const updateKYCStatus=async(req:Request, res:Response) => {
        // @ts-ignore
    const prisma = req.prisma as PrismaClient;
    const {kyc_id,status,motivo_rechazo}=req.body;
-
+   const kyc= await prisma.kycInfo.findUnique(kyc_id) 
+   if(!kyc) return res.status(404).json({error:"Kyc no encontrado"})
+  await updateUser(kyc.user_id,{kycStatus:status},prisma)
    const updated= await updateKyc(kyc_id,{status,motivo_rechazo},prisma)
   return res.json(updated)
   } catch (e) {
@@ -610,17 +619,22 @@ export const getAllUsersController = async (req: Request, res: Response) => {
 };
 //gestion de venta de XREN 
 
-export const selectCuentaBancariaXREN=async(req:Request, res:Response) => {
+export const gestionVentaXREN=async(req:Request, res:Response) => {
   try {
        // @ts-ignore
    const prisma = req.prisma as PrismaClient;
-   const {cuenta_id}=req.body;
-   const exist = await prisma.cuentas.findFirst({where:{xrenAccount:true}}) 
-  if (exist && exist.id!=cuenta_id) await prisma.cuentas.update({where:{id:exist.id},data:{xrenAccount:false}})
-  
-  const updated= await prisma.cuentas.update({where:{id:cuenta_id},data:{xrenAccount:true}})
-   
-  return res.json(updated)
+   const {numero,banco,  pagoTransferencia,
+    pagoTarjeta,
+    pagoCripto}=req.body;
+   const exist = await prisma.gestionXREN.findFirst() 
+   let gestionXREN
+  if (!exist && numero && banco) {
+    gestionXREN= await createGestionXREN(req.body,prisma)
+  } else if(exist) {
+    gestionXREN= await updateGestionXREN(exist.id,req.body,prisma)
+  }
+
+  return res.json(gestionXREN)
   } catch (e) {
     console.log(e)
     res.status(500).json({error:e})
@@ -703,3 +717,17 @@ export const changeRolUser= async(req:Request,res:Response) => {
     return res.status(500).json(error)
     }  
 }
+
+
+//// VISTA DE LA GESTION XREN
+export const getGestionVentaXREN=async(req:Request, res:Response) => {
+  try {
+       // @ts-ignore
+   const prisma = req.prisma as PrismaClient;
+   const gestionXREN = await prisma.gestionXREN.findFirst() 
+  return res.json(gestionXREN)
+  } catch (e) {
+    console.log(e)
+    res.status(500).json({error:e})
+  }
+};

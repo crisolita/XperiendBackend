@@ -1,10 +1,11 @@
 import express from "express";
-import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, getAllProjects, getAllUsersByProject, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, selectCuentaBancariaXREN, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, getAllProjects, getAllUsersByProject, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
 import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaUpdateCuentaXREN, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
 import Joivalidator from "express-joi-validation";
+import { getkycUser } from "../controllers/user";
 
 const validator = Joivalidator.createValidator({passError: true});
 
@@ -33,17 +34,18 @@ router.post("/updatetemplate",validator.body(querySchemaUpdateProjectTemplate),i
 
 ///vistas
 router.get("/cuentas",getCuentas)
+router.get("/getKycByUser",isAdmin,getkycUser)
 
 router.get("/templates",getTemplatesByPandaDoc)
 router.get("/users",getAllUsersController)
 
-router.get("/usersByProject",getAllUsersByProject)
+router.get("/usersByProject",isAdmin,getAllUsersByProject)
 
 
 
 
 //Compra XREN
-router.post("/cuentaXREN",validator.body(querySchemaUpdateCuentaXREN),selectCuentaBancariaXREN);
+router.post("/gestionCompraXren",gestionVentaXREN);
 router.put("/updateTransferenciaXREN",validator.body(querySchemaUpdateTransferXren),isAdmin,cambiarStatusDeTransferenciaParaXREN)
 
 

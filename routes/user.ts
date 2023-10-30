@@ -15,7 +15,7 @@ import {
 import Joivalidator from "express-joi-validation";
 import { authenticateToken } from "../middleware/auth";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
-import { querySchemaRegistro, querySchemaUGetAuth } from "../middleware/validation";
+import { querySchemaChangePassword, querySchemaGetRecoveryCode, querySchemaGoogleAuth, querySchemaLogin, querySchemaRegistro, querySchemaUGetAuth } from "../middleware/validation";
 const validator = Joivalidator.createValidator({passError: true});
 
 const router = express.Router();
@@ -30,14 +30,14 @@ router.get("/userInfo",authenticateToken, getUserInfo)
 
 
 
-router.post("/getRecovery",getRecoveryCode)
-router.post("/changePassword", changePasswordController);
+router.post("/getRecovery",  validator.body(querySchemaGetRecoveryCode),getRecoveryCode)
+router.post("/changePassword",  validator.body(querySchemaChangePassword), changePasswordController);
 
-router.post("/login", userLoginController);
+router.post("/login",validator.body(querySchemaLogin), userLoginController);
 router.post("/getAuth",validator.body(querySchemaUGetAuth),getAuthCode)
 
 
-router.post("/googleAuth", userGoogleController);
+router.post("/googleAuth",validator.body(querySchemaGoogleAuth), userGoogleController);
 router.put("/changeNewsletter",authenticateToken,changeNewsletter)
 
 router.put('/setFav',authenticateToken,setFavorite)

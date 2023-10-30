@@ -6,6 +6,7 @@ import {ethers} from 'ethers'
 import { createCharge } from "../service/stripe";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail, sendThanksBuyEmail } from "../service/mail";
+import { getGestion } from "../service/backoffice";
 
 export const compraXRENStripe = async (req: Request, res: Response) => {
   // @ts-ignore
@@ -19,6 +20,8 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
     if(!user) return res.status(404).json({error:"User no econtrado"})
     const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
     if(!wallet) return res.status(404).json({error:"Wallet no econtrada"})
+    const gestion= await getGestion(prisma)
+    if(!gestion?.pagoTarjeta) return res.status(400).json({error:"No se permite pago con tarjeta"})
     const phase= await saleContract.functions.getcurrentPhase()
     console.log('he llegado aca soy phase',phase,"waller",wallet)
 
@@ -59,10 +62,9 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
      // @ts-ignore
 const USER= req.user as User;
 const {tokenAmount}= req.body;
-const cuenta= await prisma.cuentas.findFirst({where:{xrenAccount:true}})
-if(!cuenta) return res.status(404).json({error:"No hay cuenta asignada a la compra XREN"})
 const phase= await saleContract.functions.getcurrentPhase()
-
+const gestion= await getGestion(prisma)
+if(!gestion?.pagoTransferencia || !gestion.numero || !gestion.banco) return res.status(400).json({error:"No se permite pago con transferencia"})
 const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
 const order = await prisma.ordersXREN.create({
   data:{
@@ -75,7 +77,7 @@ const order = await prisma.ordersXREN.create({
   }
 })
 // de donde saco la cuenta?
-await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,tokenAmount,"Compra XREN","Compra XREN")
+await sendCompraTransferenciaEmail(USER.email,gestion.numero,gestion.banco,tokenAmount,"Compra XREN","Compra XREN")
 return res.status(200).json(order);
     } catch ( error) {
       console.log(error)
@@ -94,7 +96,8 @@ return res.status(200).json(order);
         const phase= await saleContract.functions.getcurrentPhase()
 
           const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
-
+          const gestion= await getGestion(prisma)
+          if(!gestion?.pagoCripto) return res.status(400).json({error:"No se permite pago con cripto"})
       const pago = await crearPago(USER.id,tokenAmount,cripto=="USDT"? "USDT":"BUSD",new Date(),`Compra de ${tokenAmount} XREN`,prisma)
       const order = await prisma.ordersXREN.create({
         data:{

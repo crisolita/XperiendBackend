@@ -81,4 +81,38 @@ export const updateProject = async (
     },
   });
 };
-
+export const createGestionXREN = async (
+  data:{
+ numero?:string, banco?:string,pagoTransferencia?:boolean,
+ pagoTarjeta?:boolean,
+ pagoCripto?:boolean
+  },
+  prisma: PrismaClient
+) => {
+  return await prisma.gestionXREN.create({
+    data: {
+      ...data
+    },
+  });
+};
+export const updateGestionXREN = async (
+  id:number,
+  data:{
+ numero?:string, banco?:string,pagoTransferencia?:boolean,
+ pagoTarjeta?:boolean,
+ pagoCripto?:boolean
+  },
+  prisma: PrismaClient
+) => {
+  return await prisma.gestionXREN.update({
+    where:{id},
+    data: {
+      ...data
+    },
+  });
+};
+export const getGestion = async (
+  prisma: PrismaClient
+) => {
+  return await prisma.gestionXREN.findFirst();
+};

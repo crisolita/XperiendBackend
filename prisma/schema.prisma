@@ -19,7 +19,7 @@ model User {
   googleID       String?      @unique
   userName       String?      @unique
   newsletter     Boolean?
-  kycPassed      Boolean?
+  kycStatus      StatusKYC?
   clientSecret   String?
   favoritos      Int[]
   userRol        USERROL
@@ -34,6 +34,15 @@ model Templates {
   project_id    Int
   document_type Tipo
   project       Projects @relation(fields: [project_id], references: [id])
+}
+
+model GestionXREN {
+  id             Int          @id @default(autoincrement())
+  numero      String?
+  banco       String?
+  pagoTransferencia     Boolean?
+  pagoTarjeta           Boolean?
+  pagoCripto            Boolean?
 }
 
 model KycInfo {
@@ -72,7 +81,6 @@ model Cuentas {
   id          Int        @id @default(autoincrement())
   numero      String
   banco       String
-  xrenAccount Boolean?
   projects    Projects[]
 }
 

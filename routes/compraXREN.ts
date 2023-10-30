@@ -5,6 +5,7 @@ import { isAdmin } from "../middleware/isAdmin";
 import Joivalidator from "express-joi-validation";
 import { querySchemaCompraXRENCripto, querySchemaCompraXRENStripe, querySchemaCompraXRENTransferencia } from "../middleware/validation";
 import { isKycRequired } from "../middleware/kycRequired";
+import { getGestionVentaXREN } from "../controllers/backoffice";
 
 const validator = Joivalidator.createValidator({passError: true});
 
@@ -17,6 +18,8 @@ router.post("/cripto", validator.body(querySchemaCompraXRENCripto),authenticateT
 router.post("/stripe", validator.body(querySchemaCompraXRENStripe),isKycRequired,compraXRENStripe);
 
 router.get('/orders',isAdmin,ordersXREN)
+router.get('/gestionXREN',authenticateToken,getGestionVentaXREN)
+
 router.get('/ordersByUser',authenticateToken,ordersXRENByUser)
 
 export default router;

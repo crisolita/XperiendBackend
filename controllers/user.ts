@@ -232,8 +232,14 @@ export const getUserInfo = async (req: Request, res: Response) => {
     // @ts-ignore
     const USER = req.user as User;  
     const user= await getUserById(USER.id,prisma)
-
-    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter})
+    let favs=[]
+    if(user?.favoritos){
+      for (let fav of user?.favoritos) {
+        const project= await getProjectById(fav,prisma)
+        favs.push(project)
+      }
+    }
+    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter,favs})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });
@@ -245,10 +251,10 @@ export const getkycUser = async (req: Request, res: Response) => {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
  
-    const {user_id}= req.body;
-    const user= await getUserById(user_id,prisma)
+    const {user_id}= req.params;
+    const user= await getUserById(Number(user_id),prisma)
     let kycImgs=[];
-    const kyc=await getKycInfoByUser(user_id,prisma)
+    const kyc=await getKycInfoByUser(Number(user_id),prisma)
     if(kyc) {
       const kycImgsKey= await prisma.kycImages.findMany({where:{info_id:kyc?.id}})
       for (let key of kycImgsKey) {

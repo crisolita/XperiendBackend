@@ -1,9 +1,9 @@
 import express from "express";
-import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, getAllProjects, getAllUsersByProject, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, getAllProjects, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
-import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaGetKYCbyUser, querySchemaUpdateCuentaXREN, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
+import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaGetKYCbyUser, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
 import Joivalidator from "express-joi-validation";
 import { getkycUser } from "../controllers/user";
 
@@ -15,6 +15,8 @@ const router = express.Router();
 //proyectos
 router.post("/create-project",validator.body(querySchemaCreate_project), isAdmin,createProject);
 router.get("/getProjects", getAllProjects);
+router.get("/getProjectsToAdmin", isAdmin,getAllProjectsToAdmin);
+
 router.delete("/deleteImage",validator.body(querySchemaDeleteImage),isAdmin,deleteImage)
 router.post("/addImage", validator.body(querySchemaAddImage),isAdmin,addImage);
 router.post("/addDoc",validator.body(querySchemaAddDoc), isAdmin,addDoc);
@@ -39,7 +41,9 @@ router.get("/getKycByUser",validator.body(querySchemaGetKYCbyUser),isAdmin,getky
 router.get("/templates",getTemplatesByPandaDoc)
 router.get("/users",getAllUsersController)
 
-router.get("/usersByProject",isAdmin,getAllUsersByProject)
+
+/// elimino este?
+// router.get("/usersByProject",isAdmin,getAllUsersByProject)
 
 
 

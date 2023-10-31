@@ -157,12 +157,11 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const now= moment()
     if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
 
-
     const order= await prisma.orders.create({data:{
       tipo:"INTERCAMBIO",
       user_id:USER.id,
       project_id:exchange.project_id,
-      status:"POR_FIRMAR",
+      status:"POR_INTERCAMBIAR",
       cantidad:1,
       nft_id:nftId,
     }})
@@ -200,7 +199,8 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       if(!template) return res.status(404).json({error:"Template no encotrado"})
   
       const doc= await crearDocumentoDeIntercambio(order.user_id,USER.id,project.id,template.id,prisma)
-      const newOrder= await updateOrder(order.id,{status:"POR_FIRMAR",url_sign:doc?.link,document_id:doc?.id},prisma)
+      if(!doc) return res.status(500).json({error:"Error al crear el documento"})
+      const newOrder= await updateOrder(order.id,{status:"POR_FIRMAR",url_sign:doc?.link,document_id:doc?.id,exchange_receiver:USER.id},prisma)
     res.json(newOrder)
     } catch ( error) {
       console.log(error)

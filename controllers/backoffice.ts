@@ -423,7 +423,7 @@ export const manageSaleUser = async (req: Request, res: Response) => {
        const result= amountUSD/project.precio_unitario
         if(mod!=0) return res.status(400).json({error:"Monto no es relativo al precio unitario"})
          pago = await crearPago(order.user_id,amountUSD,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion",prisma)
-         template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"COMPRA"}})
+         template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:order.tipo}})
 
         if(!template) return res.status(404).json({error:"No template id encontrado"})
         
@@ -504,6 +504,67 @@ export const cancelarIntercambio = async (req: Request, res: Response) => {
 // imagenes, escenario, cuenta, fechas,userSale
 
 
+export const getAllProjectsToAdmin= async(req:Request,res:Response) => {
+  try {    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    let data=[];
+    let escenario,fechas,cuenta,keyImagenes,userSale,imagenes=[];
+    const projects= await prisma.projects.findMany()
+    const users= await getAllUsers(prisma)
+    for( let project of projects) {
+      const orders= await prisma.orders.findMany({where:{id:project.id,tipo:"COMPRA",status:"PAGADO_Y_ENTREGADO_Y_FIRMADO"}})
+      escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
+      fechas= await prisma.gestion_fechas.findMany({where:{project_id:project.id}})
+      if (project.cuenta_id){
+        cuenta= await prisma.cuentas.findUnique({where:{id:project.cuenta_id}})
+      }
+      userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
+      keyImagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
+      for (let key of keyImagenes ){
+        const ruta= await getImage(key.path)
+        imagenes.push({
+          rol:key.rol,
+          id:key.id,
+          path:ruta
+        })
+      }
+      let favsUser=[]
+      for (let user of users ){
+        if(user.favoritos.includes(project.id)) {
+          favsUser.push({
+            username:user.userName,
+            email:user.email
+          })
+        }
+      }
+      let investors=[]
+      for (let order of orders) {
+        const user= await getUserById(order.user_id,prisma)
+        investors.push({
+          userId:order.user_id,
+          email: user?.email,
+          newsletter:user?.newsletter,
+          cantidad:order.cantidad,
+          fecha:order.fecha
+        });
+      }
+      data.push({
+        project,
+        escenario,
+        fechas,
+        cuenta,
+        imagenes,
+        userSale,
+        investors,
+        favsUser
+      })
+    }
+    return res.json(data)
+  } catch(e) {
+    console.log(e)
+    return res.status(500).json({error:e})
+    }  
+}
 export const getAllProjects= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;

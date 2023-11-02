@@ -660,7 +660,7 @@ export const updateKYCStatus=async(req:Request, res:Response) => {
        // @ts-ignore
    const prisma = req.prisma as PrismaClient;
    const {kyc_id,status,motivo_rechazo}=req.body;
-   const kyc= await prisma.kycInfo.findUnique(kyc_id) 
+   const kyc= await prisma.kycInfo.findUnique({where:{id:kyc_id}}) 
    if(!kyc) return res.status(404).json({error:"Kyc no encontrado"})
   await updateUser(kyc.user_id,{kycStatus:status},prisma)
    const updated= await updateKyc(kyc_id,{status,motivo_rechazo},prisma)

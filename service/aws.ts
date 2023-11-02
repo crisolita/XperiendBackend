@@ -68,3 +68,11 @@ export const uploadDoc = async (key:ArrayBuffer,ruta:string)=>{
     }
   });
 }
+export const getDoc = async (key:string)=>{
+  const getObjectParams = {
+    Bucket: 'xperiend-images',
+    Key: `${key}.pdf`,
+  };
+  const imageUrl = s3.getSignedUrl('getObject', getObjectParams);
+  return imageUrl;
+}

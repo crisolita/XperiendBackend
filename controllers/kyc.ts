@@ -40,7 +40,7 @@ try {
         status:"PENDIENTE"
       }
      })
-
+     await updateUser(USER.id,{kycStatus:"PENDIENTE"},prisma)
     
      let base64Frontal,pathFrontal,pathTrasera,base64Trasera
      if(document=="DNI" && foto_dni_frontal && foto_dni_trasera) {
@@ -112,8 +112,9 @@ export const updateKYC= async (req:Request,res: Response) => {
       return res.status(400).json({error:"Kyc no creado"})
      } else if(kycAlready?.status=="RECHAZADO") {
   
-    info=await updateKyc(kycAlready.id,{name,lastname,document_number,country_born,birth,telf,address,document,city,postalCode,state,country,wallet},prisma)
-          if(foto_dni_frontal) {
+    info=await updateKyc(kycAlready.id,{name,lastname,document_number,country_born,birth,telf,address,document,city,postalCode,state,country,wallet,status:"PENDIENTE"},prisma)
+    await updateUser(USER.id,{kycStatus:"PENDIENTE"},prisma)     
+    if(foto_dni_frontal) {
             const path=`kyc_image_${user.id}_${info.id}_DNIFRONTAL`
             const data= Buffer.from(foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
             await uploadImage(data,path)

@@ -10,6 +10,7 @@ import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, crearDocumentoRec
 import { getKycInfoByUser, getUserById } from "../service/user";
 import fetch from "node-fetch";
 import { xperiendNFT } from "../service/web3";
+import { getDoc } from "../service/aws";
 export const compraParticipacionStripe = async (req: Request, res: Response) => {
     try {
       // @ts-ignore
@@ -364,15 +365,58 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       res.status(500).json( error );
     }
   };
-  export const documentos = async (req: Request, res: Response) => {
+  export const documentosToUser = async (req: Request, res: Response) => {
     try {
-      // @ts-ignore
+      //@ts-ignore
       const prisma = req.prisma as PrismaClient;
-      const orders= await prisma.orders.findMany()
-      res.json(orders)
-    } catch ( error) {
-      console.log(error)
-      res.status(500).json( error );
+      const USER = req.user as User;
+      const { project_id } = req.query;
+  
+      const project = await getProjectById(Number(project_id), prisma);
+      if (!project) return res.status(404).json({ error: "Proyecto no encontrado" });
+  
+      const user = await getUserById(USER.id, prisma);
+      const documentosUser = await prisma.projectDocs.findMany({
+        where: { visible: true, user_rol_visible: "CLIENT", project_id: project.id },
+      });
+  
+      let documentos: any[] = [];
+      if (user?.kycStatus === "APROBADO") {
+        const documentosKyc = await prisma.projectDocs.findMany({
+          where: { visible: true, user_rol_visible: "KYC", project_id: project.id },
+        });
+  
+        const owner = await prisma.orders.findFirst({
+          where: { user_id: user.id, status: "PAGADO_Y_ENTREGADO_Y_FIRMADO", project_id: project.id },
+        });
+  
+        const documentosOwner = owner
+          ? await prisma.projectDocs.findMany({ where: { visible: true, user_rol_visible: "OWNER", project_id: project.id } })
+          : [];
+  
+        documentos = owner ? documentosUser.concat(documentosKyc, documentosOwner) : documentosKyc.concat(documentosUser);
+      } else {
+        documentos = documentosUser;
+      }
+  
+      const data = await Promise.all(
+        documentos.map(async (doc) => ({
+          id: doc.id,
+          rol: doc.rol,
+          path: await getDoc(doc.path),
+        }))
+      );
+  
+      res.json(data);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);
     }
   };
+  
+  
+  
+  
+  
+  
 

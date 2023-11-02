@@ -61,7 +61,7 @@ export const querySchemaCreate_project = Joi.object({
         Joi.object({
           rol: Joi.string().valid('DOSSIER',
             'DETALLES',
-            'TESTIGOS,',
+            'TESTIGOS',
             'UBICACION',
             'PLANOS',
             'ECONOMICO',
@@ -245,7 +245,7 @@ export const querySchemaCreate_project = Joi.object({
                   export const querySchemaGestionVisibilidad= Joi.object({
                     project_id:Joi.number().required(),rol:Joi.string().valid('DOSSIER',
                     'DETALLES',
-                    'TESTIGOS,',
+                    'TESTIGOS',
                     'UBICACION',
                     'PLANOS',
                     'ECONOMICO',

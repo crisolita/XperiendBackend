@@ -119,3 +119,13 @@ else if (premiumUser && XRENBALANCE>=premiumUser.minXRENwallet && XRENSTAKE>=(pr
 else if(normalUser && XRENBALANCE>=normalUser.minXRENwallet && XRENSTAKE>=(normalUser.minXRENstake?normalUser.minXRENstake: 0)) return normalUser.openingDate
 
 }
+export const getTipoDeUsuario= async (wallet:string,project_id:number,prisma:PrismaClient) => {
+  const XRENBALANCE=await getTotalBalanceVenta(wallet);
+  const XRENSTAKE= await getTotalBalanceStake(wallet)
+  const normalUser= await prisma.userManage.findFirst({where:{project_id,tipoDeUser:"REGULAR"}})
+  const premiumUser= await prisma.userManage.findFirst({where:{project_id,tipoDeUser:"PREMIUM"}})
+  const goldPremiumUser= await prisma.userManage.findFirst({where:{project_id,tipoDeUser:"PREMIUMGOLD"}})
+  if(goldPremiumUser && XRENBALANCE>=goldPremiumUser.minXRENwallet && XRENSTAKE>=(goldPremiumUser.minXRENstake?goldPremiumUser.minXRENstake: 0)) return `goldPremiumUser`
+  else if (premiumUser && XRENBALANCE>=premiumUser.minXRENwallet && XRENSTAKE>=(premiumUser.minXRENstake?premiumUser.minXRENstake: 0)) return `premiumUser` 
+  else if(normalUser && XRENBALANCE>=normalUser.minXRENwallet && XRENSTAKE>=(normalUser.minXRENstake?normalUser.minXRENstake: 0)) return `normalUser`
+  }

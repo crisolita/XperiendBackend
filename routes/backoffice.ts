@@ -1,9 +1,9 @@
 import express from "express";
-import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, getAllProjects, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, gestionVisibilidadDoc, getAllProjects, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
-import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaGetKYCbyUser, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
+import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaGestionVisibilidad, querySchemaGetKYCbyUser, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
 import Joivalidator from "express-joi-validation";
 import { getkycUser } from "../controllers/user";
 
@@ -33,6 +33,7 @@ router.put("/updateEstado",validator.body(querySchemaUpdateProjectEstado), isAdm
 router.post("/manageUserSale",validator.body(querySchemaUpdateProjectUserSaleManage),isAdmin,manageSaleUser);
 
 router.post("/updatetemplate",validator.body(querySchemaUpdateProjectTemplate),isAdmin,updateProjectTemplateDocs);
+router.post("/updateDocVisibilidad",validator.body(querySchemaGestionVisibilidad),isAdmin,gestionVisibilidadDoc);
 
 ///vistas
 router.get("/cuentas",getCuentas)

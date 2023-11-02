@@ -176,6 +176,7 @@ model ProjectDocs {
   path       String   @unique
   rol        RolDoc
   visible    Boolean
+  user_rol_visible UserRolVisibilidad  
   project    Projects @relation(fields: [project_id], references: [id])
 }
 
@@ -272,6 +273,11 @@ enum Escenario {
   CONSERVADOR
   MODERADO
   FAVORABLE
+}
+enum UserRolVisibilidad {
+  CLIENT
+  KYC
+  OWNER
 }
 
 enum Tipo {

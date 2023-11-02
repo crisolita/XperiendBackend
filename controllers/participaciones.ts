@@ -3,11 +3,11 @@ import { Request, Response, response } from "express";
 import { getProjectById } from "../service/backoffice";
 import moment from "moment";
 import { createCharge } from "../service/stripe";
-import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
+import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTipoDeUsuario, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import { sendCompraTransferenciaEmail } from "../service/mail";
 import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, crearDocumentoReclamacion, crearDocumentoReinversion, isCompleted } from "../service/pandadoc";
-import { getKycInfoByUser } from "../service/user";
+import { getKycInfoByUser, getUserById } from "../service/user";
 import fetch from "node-fetch";
 import { xperiendNFT } from "../service/web3";
 export const compraParticipacionStripe = async (req: Request, res: Response) => {
@@ -131,11 +131,9 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
         break
       case 'REINVERSION':
         break
-        case 'INTERCAMBIO':
-          break
     }  
 
-    res.json("prueba")
+    res.json(newOrder)
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -187,7 +185,10 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const gestion= await getGestionByProjectId(project.id,prisma)
     const now= moment()
     if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
-
+      const kyc= await getKycInfoByUser(USER.id,prisma)
+    if(!kyc?.wallet) return res.status(404).json({error:"Wallet del comprador no encontrada"})
+    const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
+    if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
       /// Cargo en stripe
       const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,project.precio_unitario*100,prisma)
       if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
@@ -224,6 +225,11 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const now= moment()
     if(!cuenta) return res.status(404).json({error:"Cuenta para transferir no definida"})
     if(!now.isBetween(moment(gestion?.fecha_inicio_intercambio),moment(gestion?.fecha_fin_intercambio)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+    const kyc= await getKycInfoByUser(USER.id,prisma)
+    if(!kyc?.wallet) return res.status(404).json({error:"Wallet del comprador no encontrada"})
+    const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
+    if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
+    
     await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT por intercambio")
 
     const newOrder= await updateOrder(order.id,{status:"PAGO_PENDIENTE",exchange_receiver:USER.id},prisma)
@@ -358,5 +364,15 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       res.status(500).json( error );
     }
   };
-
+  export const documentos = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const orders= await prisma.orders.findMany()
+      res.json(orders)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
 

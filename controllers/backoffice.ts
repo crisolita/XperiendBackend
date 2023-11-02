@@ -112,7 +112,8 @@ export const convertFullName = (str: string) =>
         project_id:project_id,
         path:path,
         visible:false,
-        rol:doc.rol
+        rol:doc.rol,
+        user_rol_visible:'OWNER'
       }})
     }
      // // Utiliza fetch aquí dentro
@@ -121,7 +122,7 @@ export const convertFullName = (str: string) =>
      await uploadDoc(data,path)
     }
    
-      return res.json({data:"Documento subido con exito"})
+      return res.json({data:"Documentos subidos con exito"})
     } catch(e) {
 
       console.log(e)
@@ -322,11 +323,11 @@ export const convertFullName = (str: string) =>
             data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "PUBLICO":
-            if(estado!=="EN_PROCESO" || estado!=="NO_COMPLETADO") return res.status(400).json({error:"Estado incorrecto"})
+            if(estado!=="ABIERTO" ) return res.status(400).json({error:"Estado incorrecto"})
             data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "ABIERTO":
-            if(estado!=="PUBLICO" ) return res.status(400).json({error:"Estado incorrecto"})
+            if(estado!=="EN_PROCESO" || estado!=="NO_COMPLETADO") return res.status(400).json({error:"Estado incorrecto"})
             data= await prisma.projects.update({where:{id:project.id},data:{estado:estado}})
           break;
           case "EN_PROCESO":
@@ -372,6 +373,24 @@ export const convertFullName = (str: string) =>
       res.status(500).json( error );
     }
   };
+
+  export const gestionVisibilidadDoc= async(req:Request,res:Response) => {
+    try {    // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+      const {project_id,rol,user_rol_visible,visible}=req.body;
+      const project=await prisma.projects.findUnique({where:{id:project_id}})
+      if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
+    const path=`${project.titulo.replace(/\s/g, '_')}_${project_id}_${rol}`
+    const exist= await prisma.projectDocs.findUnique({where:{path}})
+    if(!exist) return res.status(404).json({error:`Documento ${rol} no ha sido subido en este proyecto ${project_id}`})
+      const updated= await prisma.projectDocs.update({where:{path},data:{user_rol_visible,visible}})
+      return res.json(updated)
+    } catch(e) {
+
+      console.log(e)
+      return res.status(500).json({error:e})
+      }  
+  }
 
 
 //gestion user venta de proyectos
@@ -433,11 +452,11 @@ export const manageSaleUser = async (req: Request, res: Response) => {
         return res.status(200).json({pago,newOrder});
       } else if (order?.tipo=="INTERCAMBIO") {
         if(!project || !project.precio_unitario  || !order.exchange_receiver) return res.status(400).json({error:"No es una transaccion de usuario y/o montos definidos"})
+        template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
+        console.log(template)
+        if(!template) return res.status(404).json({error:"No template  encontrado"})
 
               pago = await crearPago(order.user_id,project.precio_unitario,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion por intercambio",prisma)
-              template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
-
-              if(!template) return res.status(404).json({error:"No template  encontrado"})
             
               const docData= await crearDocumentoDeIntercambio(order.user_id,order.exchange_receiver,project.id,template.id,prisma)
               if(!docData) return res.status(500).json({error:"Falla al crear documento"})

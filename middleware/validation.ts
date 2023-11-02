@@ -177,14 +177,7 @@ export const querySchemaCreate_project = Joi.object({
        'ADMIN').required()
       });
       export const querySchemaUpdateTransferParticipaciones= Joi.object({
-        order_id:Joi.number().required(),amountUSD:Joi.number().required(),status:Joi.string().valid('PAGADO_Y_ENTREGADO_Y_FIRMADO',
-          'PAGO_PENDIENTE',
-          'ERROR_EN_PAGO',
-          'POR_FIRMAR',
-          'FIRMADO_POR_ENTREGAR',
-          'PAGO_CANCELADO',
-          'PAGO_DEVUELTO',
-          'POR_INTERCAMBIAR').required(),fecha_recibido:Joi.date(),fecha_devolucion:Joi.date()
+        order_id:Joi.number().required(),amountUSD:Joi.number().required(),status:Joi.string().valid('CONFIRMADO','CANCELADO','DEVUELTO').required(),fecha_recibido:Joi.date(),fecha_devolucion:Joi.date()
        });
 
        export const querySchemaCompraXRENTransferencia= Joi.object({
@@ -249,4 +242,12 @@ export const querySchemaCreate_project = Joi.object({
                 export const querySchemaGetKYCbyUser= Joi.object({
                   user_id:Joi.number().required()
                   });
-
+                  export const querySchemaGestionVisibilidad= Joi.object({
+                    project_id:Joi.number().required(),rol:Joi.string().valid('DOSSIER',
+                    'DETALLES',
+                    'TESTIGOS,',
+                    'UBICACION',
+                    'PLANOS',
+                    'ECONOMICO',
+                    'DESCARGABLE').required(),user_rol_visible:Joi.string().valid('CLIENT','OWNER','KYC').required(),visible:Joi.boolean().required()
+                    });

@@ -251,7 +251,7 @@ export const getkycUser = async (req: Request, res: Response) => {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
  
-    const {user_id}= req.params;
+    const {user_id}= req.query;
     const user= await getUserById(Number(user_id),prisma)
     let kycImgs=[];
     const kyc=await getKycInfoByUser(Number(user_id),prisma)

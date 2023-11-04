@@ -18,6 +18,8 @@ import { OAuth2Client } from 'google-auth-library';
 import axios from "axios";
 import { getProjectById } from "../service/backoffice";
 import { getImage } from "../service/aws";
+import { getFechaDeVentaInicial } from "../service/participaciones";
+import moment from "moment";
 const client = new OAuth2Client({
   clientId: process.env.CLIENT_ID_GOOGLE,
   clientSecret: process.env.CLIENT_SECRET_GOOGLE,
@@ -122,6 +124,7 @@ export const userLoginController = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Email incorrecto" });
     }
   } catch ( error ) {
+    console.log(error)
     return res.status(500).json(error);
 
   }
@@ -312,4 +315,27 @@ export const getFavorites = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error });
   } 
 }
+
+export const userCanBuy = async (req: Request, res: Response) => {
+  try {
+    const salt = bcrypt.genSaltSync();
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+     // @ts-ignore
+     const USER = req.user as User;
+     const {project_id} = req.query;
+    //  const user = await getUserById(USER.id, prisma);
+    //  if(!user) return res.status(404).json({error:"Usuario no encontrado"})
+    const kyc= await getKycInfoByUser(USER.id,prisma)
+    if(!kyc || !kyc.wallet) return res.status(404).json({error:"Wallet o kyc no encontrado"})
+     const fecha_inicial= await getFechaDeVentaInicial(kyc.wallet,Number(project_id),prisma)
+    const now= moment()
+    if(now.isBefore(fecha_inicial)) return res.json(false)
+    return res.json(true)
+   }
+  catch (error ) {
+    console.log(error)
+    res.json({ error });
+  }
+};
 

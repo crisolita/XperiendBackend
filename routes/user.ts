@@ -10,6 +10,7 @@ import {
   getUserInfo,
   setFavorite,
   getFavorites,
+  userCanBuy,
   
 } from "../controllers/user";
 import Joivalidator from "express-joi-validation";
@@ -42,4 +43,6 @@ router.put("/changeNewsletter",authenticateToken,changeNewsletter)
 
 router.put('/setFav',authenticateToken,setFavorite)
 router.get('/getFavs',authenticateToken,getFavorites)
+router.get('/canBuy',authenticateToken,userCanBuy)
+
 export default router;

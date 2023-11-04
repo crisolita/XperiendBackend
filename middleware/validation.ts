@@ -8,9 +8,9 @@ export const querySchemaRegistro = Joi.object({
   email: Joi.string()
     .email({ minDomainSegments: 2 })
     .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"}),
-    referallUser: Joi.string().min(6),
-    userName: Joi.string().min(6),
-    newsletter:Joi.boolean()
+    referallUser: Joi.string().min(6).optional(),
+    userName: Joi.string().min(6).optional(),
+    newsletter:Joi.boolean().optional()
 });
 export const querySchemaUGetAuth = Joi.object({
   password: Joi.string().required().pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?])[A-Za-z0-9`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?]{8,}$/)).messages({  'string.base': `Contraseña debe ser de tipo texto`,
@@ -37,7 +37,7 @@ export const querySchemaCreate_project = Joi.object({
       resumen:Joi.string()
     });
     export const querySchemaDeleteImage = Joi.object({
-      path:Joi.string()
+      path:Joi.string().required()
     });
 
     export const querySchemaAddImage = Joi.object({
@@ -205,7 +205,7 @@ export const querySchemaCreate_project = Joi.object({
         state:Joi.string().required(),
         country:Joi.string().required(),
         foto_dni_frontal:Joi.string().required(),
-        foto_dni_trasera:Joi.string(),
+        foto_dni_trasera:Joi.string().optional(),
         wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required()
       });
       export const querySchemaCompraPartStripe= Joi.object({

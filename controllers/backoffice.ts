@@ -9,7 +9,7 @@ import { crearDocumentoDeCompra, crearDocumentoDeIntercambio, getTemplates, isVa
 import { getAllUsers, getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract, xperiendNFT } from "../service/web3";
-import { sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail } from "../service/mail";
+import { sendKycAprobado, sendKycRechazado, sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail, sendTransferenciaRecibida } from "../service/mail";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -664,8 +664,13 @@ export const updateKYCStatus=async(req:Request, res:Response) => {
    const {kyc_id,status,motivo_rechazo_kyc}=req.body;
    const kyc= await prisma.kycInfo.findUnique({where:{id:kyc_id}}) 
    if(!kyc) return res.status(404).json({error:"Kyc no encontrado"})
+   const user=await getUserById(kyc.user_id,prisma)
+   if(!user) return res.status(404).json({error:"Usuario no valido"})
   await updateUser(kyc.user_id,{kycStatus:status,motivo_rechazo_kyc},prisma)
    const updated= await updateKyc(kyc_id,{status},prisma)
+   if (status=="APROBADO") await sendKycAprobado(user.email,user.userName? user.userName :"querido usuario")
+   if (status=="RECHAZADO") await sendKycRechazado(user.email,motivo_rechazo_kyc,user.userName? user.userName :"querido usuario")
+
   return res.json(updated)
   } catch (e) {
     console.log(e)
@@ -746,7 +751,7 @@ const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
         const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(order.unidades.toString()),wallet)
 
          newOrder= await prisma.ordersXREN.update({where:{id:order.id},data:{hash:mint.hash,status:"PAGO_EXITOSO_ENTREGADO"}})
-         await sendThanksBuyEmail(user.email,order.unidades,"TRANSFERENCIA_BANCARIA")
+         await sendTransferenciaRecibida(user.email,user.userName? user.userName:"querido usuario")
          return res.status(200).json({pago,newOrder});
 
     } else  {

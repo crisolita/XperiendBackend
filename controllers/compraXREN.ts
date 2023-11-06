@@ -77,7 +77,8 @@ const order = await prisma.ordersXREN.create({
   }
 })
 // de donde saco la cuenta?
-await sendCompraTransferenciaEmail(USER.email,gestion.numero,gestion.banco,tokenAmount,"Compra XREN","Compra XREN")
+const user= await getUserById(USER.id,prisma)
+await sendCompraTransferenciaEmail(USER.email,user?.userName?user.userName:"querido usuario",gestion.numero,gestion.banco,tokenAmount,"Compra XREN","Compra XREN")
 return res.status(200).json(order);
     } catch ( error) {
       console.log(error)

@@ -74,7 +74,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const now= moment()
     console.log(fecha_abierto_por_usuario,gestion.fecha_fin_venta)
       if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
-      await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario*cantidad,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT")
+      await sendCompraTransferenciaEmail(USER.email,`${kycInfo.name} ${kycInfo.lastname}`,cuenta.numero,cuenta.banco,project.precio_unitario*cantidad,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT")
         const order= await prisma.orders.create({
         data:{
         tipo:"COMPRA",
@@ -230,8 +230,8 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     if(!kyc?.wallet) return res.status(404).json({error:"Wallet del comprador no encontrada"})
     const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
     if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
-    
-    await sendCompraTransferenciaEmail(USER.email,cuenta.numero,cuenta.banco,project.precio_unitario,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT por intercambio")
+    const user = await getUserById(USER.id,prisma)
+    await sendCompraTransferenciaEmail(USER.email,user?.userName?user.userName:"querido usuario",cuenta.numero,cuenta.banco,project.precio_unitario,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT por intercambio")
 
     const newOrder= await updateOrder(order.id,{status:"PAGO_PENDIENTE",exchange_receiver:USER.id},prisma)
     res.json(newOrder)

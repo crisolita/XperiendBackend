@@ -13,7 +13,7 @@ import {
   updateUser,
 
 } from "../service/user";
-import { sendAuthEmail, sendWelcomeEmailConSubs, sendWelcomeEmailSinSubs } from "../service/mail";
+import { sendAuthEmail, sendRecoverCode, sendWelcomeEmailConSubs, sendWelcomeEmailSinSubs } from "../service/mail";
 import { OAuth2Client } from 'google-auth-library';
 import axios from "axios";
 import { getProjectById } from "../service/backoffice";
@@ -140,7 +140,7 @@ export const getRecoveryCode =async (req: Request, res: Response) => {
     const { email} = req?.body;
     const user = await getUserByEmail(email, prisma);
     if (user && user.userName) {
-      await sendAuthEmail(email, authCode,user.userName);
+      await sendRecoverCode(email, authCode,user.userName);
       await updateUser(user.id, {authToken:bcrypt.hashSync(authCode, salt)},prisma);
       return res.status(200).json(
        {

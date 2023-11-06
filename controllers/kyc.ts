@@ -69,7 +69,7 @@ try {
      }
    })
    dataImages.push(img)
-     } else if (document=="PASSPORT" && foto_dni_frontal) {
+     } else if (document=="PASAPORTE" && foto_dni_frontal) {
       pathFrontal=`kyc_image_${user.id}_${info.id}_${"DNIFRONTAL"}`
 
       base64Frontal= foto_dni_frontal.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')

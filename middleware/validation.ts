@@ -168,7 +168,7 @@ export const querySchemaCreate_project = Joi.object({
         status:Joi.string().valid('APROBADO',
           'RECHAZADO',
           'PENDIENTE').required(),
-        motivo_rechazo:Joi.string()
+        motivo_rechazo_kyc:Joi.string()
       });
 
       export const querySchemaChangeAdmin= Joi.object({
@@ -250,4 +250,22 @@ export const querySchemaCreate_project = Joi.object({
                     'PLANOS',
                     'ECONOMICO',
                     'DESCARGABLE').required(),user_rol_visible:Joi.string().valid('CLIENT','OWNER','KYC').required(),visible:Joi.boolean().required()
+                    });
+
+                    export const querySchemaUpdateKyc= Joi.object({
+                      name:Joi.string(),
+                      lastname:Joi.string(),
+                      country_born:Joi.string(),
+                      birth:Joi.date(),
+                      telf:Joi.string(),
+                      address:Joi.string(),
+                      document:Joi.string(),
+                      document_number:Joi.string(),
+                      city:Joi.string(),
+                      postalCode:Joi.number(),
+                      state:Joi.string(),
+                      country:Joi.string(),
+                      foto_dni_frontal:Joi.string(),
+                      foto_dni_trasera:Joi.string(),
+                      wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/)
                     });

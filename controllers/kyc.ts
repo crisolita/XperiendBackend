@@ -84,6 +84,8 @@ try {
     })
     dataImages.push(img)
      } else {
+      await prisma.kycInfo.delete({where:{id:info.id}})
+      await updateUser(user.id,{kycStatus:undefined},prisma)
       return res.status(400).json({error:"No hay suficientes fotos de los documentos"})
      }
 
@@ -116,7 +118,7 @@ export const updateKYC= async (req:Request,res: Response) => {
     await updateUser(USER.id,{kycStatus:"PENDIENTE"},prisma)     
     if(foto_dni_frontal) {
             const path=`kyc_image_${user.id}_${info.id}_DNIFRONTAL`
-            const data= Buffer.from(foto_dni_trasera.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+            const data= Buffer.from(foto_dni_frontal.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
             await uploadImage(data,path)
           }
           if(foto_dni_trasera) {

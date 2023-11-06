@@ -527,7 +527,7 @@ export const getAllProjectsToAdmin= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     let data=[];
-    let escenario,fechas,cuenta,keyImagenes,userSale,imagenes=[];
+    let escenario,fechas,cuenta,keyImagenes,userSale=[];
     const projects= await prisma.projects.findMany()
     const users= await getAllUsers(prisma)
     for( let project of projects) {
@@ -539,6 +539,7 @@ export const getAllProjectsToAdmin= async(req:Request,res:Response) => {
       }
       userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
       keyImagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
+      let imagenes=[]
       for (let key of keyImagenes ){
         const ruta= await getImage(key.path)
         imagenes.push({
@@ -588,7 +589,7 @@ export const getAllProjects= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     let data=[];
-    let escenario,fechas,cuenta,keyImagenes,userSale,imagenes=[];
+    let escenario,fechas,cuenta,keyImagenes,userSale=[];
     const projects= await prisma.projects.findMany()
     for( let project of projects) {
       escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
@@ -598,6 +599,7 @@ export const getAllProjects= async(req:Request,res:Response) => {
       }
       userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
       keyImagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
+      let imagenes=[]
       for (let key of keyImagenes ){
         const ruta= await getImage(key.path)
         imagenes.push({
@@ -659,11 +661,11 @@ export const updateKYCStatus=async(req:Request, res:Response) => {
   try {
        // @ts-ignore
    const prisma = req.prisma as PrismaClient;
-   const {kyc_id,status,motivo_rechazo}=req.body;
+   const {kyc_id,status,motivo_rechazo_kyc}=req.body;
    const kyc= await prisma.kycInfo.findUnique({where:{id:kyc_id}}) 
    if(!kyc) return res.status(404).json({error:"Kyc no encontrado"})
-  await updateUser(kyc.user_id,{kycStatus:status},prisma)
-   const updated= await updateKyc(kyc_id,{status,motivo_rechazo},prisma)
+  await updateUser(kyc.user_id,{kycStatus:status,motivo_rechazo_kyc},prisma)
+   const updated= await updateKyc(kyc_id,{status},prisma)
   return res.json(updated)
   } catch (e) {
     console.log(e)

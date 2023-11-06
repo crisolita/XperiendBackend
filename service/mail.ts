@@ -4,13 +4,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const transporter = nodemailer.createTransport({
-  port: 465, // true for 465, false for other ports
-  host: "smtp.gmail.com",
+  port: 587, // true for 465, false for other ports
+  host: "smtp.dondominio.com",
   auth: {
     user: process.env.EMAILADDRESS,
     pass: process.env.PASSEMAIL,
   },
-  secure: true,
+  secure: false,
 });
 
 export async function sendAuthEmail(email: string, authCode: string,username:string) {

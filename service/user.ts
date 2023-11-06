@@ -28,7 +28,7 @@ export const findUsername = async (userName: string, prisma: PrismaClient) => {
 
 export const updateUser = async (
   id: number,
-  data: { email?: string; password?: string;kycStatus?:StatusKYC, clientSecret?: string,authToken?:string,newsletter?:boolean,userRol?:USERROL},
+  data: { email?: string; password?: string;kycStatus?:StatusKYC,motivo_rechazo_kyc?:string, clientSecret?: string,authToken?:string,newsletter?:boolean,userRol?:USERROL},
   prisma: PrismaClient
 ) => {
   return await prisma.user.update({

@@ -22,6 +22,7 @@ model User {
   kycStatus      StatusKYC?
   clientSecret   String?
   favoritos      Int[]
+  motivo_rechazo_kyc String?
   userRol        USERROL
   orders         Orders[]
   pagos          Pagos[]
@@ -62,7 +63,6 @@ model KycInfo {
   document_number String
   country         String
   status          StatusKYC
-  motivo_rechazo  String?
   wallet          String
   kycImages       KycImages[]
   user            User        @relation(fields: [user_id], references: [id])

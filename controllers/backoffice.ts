@@ -660,6 +660,46 @@ export const getAllProjects= async(req:Request,res:Response) => {
     }  
 }
 
+export const getAllProjectsPublic= async(req:Request,res:Response) => {
+  try {    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    let data=[];
+    let escenario,fechas,cuenta,keyImagenes,userSale=[];
+    const projects= await prisma.projects.findMany()
+    for( let project of projects) {
+      escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
+      fechas= await prisma.gestion_fechas.findFirst({where:{project_id:project.id}})
+      if (project.cuenta_id){
+        cuenta= await prisma.cuentas.findUnique({where:{id:project.cuenta_id}})
+      }
+      userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
+      keyImagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
+      let imagenes=[]
+      for (let key of keyImagenes ) {
+        const ruta= await getImage(key.path)
+        imagenes.push({
+          rol:key.rol,
+          id:key.id,
+          path:ruta
+        })
+      }
+    
+      data.push({
+        project,
+        escenario,
+        fechas,
+        cuenta,
+        imagenes,
+        userSale
+         })
+    }
+    return res.json(data)
+  } catch(e) {
+    console.log(e)
+    return res.status(500).json({error:e})
+    }  
+}
+
  
 export const getCuentas= async(req:Request,res:Response) => {
   try {    // @ts-ignore

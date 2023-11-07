@@ -1,5 +1,5 @@
 import express from "express";
-import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, gestionVisibilidadDoc, getAllProjects, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, gestionVisibilidadDoc, getAllProjects, getAllProjectsPublic, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
@@ -14,7 +14,9 @@ const router = express.Router();
 
 //proyectos
 router.post("/create-project",validator.body(querySchemaCreate_project), isAdmin,createProject);
-router.get("/getProjects",authenticateToken, getAllProjects);
+router.get("/getProjectsToUser",authenticateToken, getAllProjects);
+router.get("/getProjects", getAllProjectsPublic);
+
 router.get("/getProjectsToAdmin", isAdmin,getAllProjectsToAdmin);
 
 router.delete("/deleteImage",validator.body(querySchemaDeleteImage),isAdmin,deleteImage)

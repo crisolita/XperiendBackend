@@ -14,7 +14,7 @@ const router = express.Router();
 
 //proyectos
 router.post("/create-project",validator.body(querySchemaCreate_project), isAdmin,createProject);
-router.get("/getProjects", getAllProjects);
+router.get("/getProjects",authenticateToken, getAllProjects);
 router.get("/getProjectsToAdmin", isAdmin,getAllProjectsToAdmin);
 
 router.delete("/deleteImage",validator.body(querySchemaDeleteImage),isAdmin,deleteImage)

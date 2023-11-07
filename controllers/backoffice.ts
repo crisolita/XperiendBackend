@@ -1,6 +1,6 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
-import { deleteImageAWS, getImage, uploadDoc, uploadImage } from "../service/aws";
+import { deleteImageAWS, getDoc, getImage, uploadDoc, uploadImage } from "../service/aws";
 import { createGestionXREN, getProjectById, updateEscenario, updateFechas, updateGestionXREN, updateProject } from "../service/backoffice";
 import moment from "moment";
 import {  getOrderById, updateOrder } from "../service/participaciones";
@@ -196,12 +196,12 @@ export const convertFullName = (str: string) =>
       
         const exist= await prisma.gestion_fechas.findUnique({where:{project_id:project_id}})
         if(exist) {
-         data=await updateFechas(project_id,{ fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): null,
-          fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): null,
-        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): null,
-        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): null,
-        fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): null,
-        fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): null,
+         data=await updateFechas(project_id,{ fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): undefined,
+          fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): undefined,
+        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): undefined,
+        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): undefined,
+        fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): undefined,
+        fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): undefined,
         visible_user,
         visible_premium,
         visible_gold},prisma)
@@ -209,12 +209,12 @@ export const convertFullName = (str: string) =>
           data= await prisma.gestion_fechas.create({
             data:{
               project_id,
-              fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): null,
-            fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): null,
-          fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): null,
-        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): null,
-        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): null,
-        fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): null,
+              fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): undefined,
+            fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): undefined,
+          fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): undefined,
+        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): undefined,
+        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): undefined,
+        fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): undefined,
         visible_user,
         visible_premium,
         visible_gold
@@ -588,19 +588,22 @@ export const getAllProjectsToAdmin= async(req:Request,res:Response) => {
 export const getAllProjects= async(req:Request,res:Response) => {
   try {    // @ts-ignore
     const prisma = req.prisma as PrismaClient;
+     // @ts-ignore
+    const USER= req.user as User;
     let data=[];
     let escenario,fechas,cuenta,keyImagenes,userSale=[];
     const projects= await prisma.projects.findMany()
+    const user=await getUserById(USER.id,prisma)
     for( let project of projects) {
       escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
-      fechas= await prisma.gestion_fechas.findMany({where:{project_id:project.id}})
+      fechas= await prisma.gestion_fechas.findFirst({where:{project_id:project.id}})
       if (project.cuenta_id){
         cuenta= await prisma.cuentas.findUnique({where:{id:project.cuenta_id}})
       }
       userSale= await prisma.userManage.findMany({where:{project_id:project.id}})
       keyImagenes= await prisma.projectImages.findMany({where:{project_id:project.id}})
       let imagenes=[]
-      for (let key of keyImagenes ){
+      for (let key of keyImagenes ) {
         const ruta= await getImage(key.path)
         imagenes.push({
           rol:key.rol,
@@ -608,14 +611,46 @@ export const getAllProjects= async(req:Request,res:Response) => {
           path:ruta
         })
       }
+      const documentosUser = await prisma.projectDocs.findMany({
+        where: { visible: true, user_rol_visible: "CLIENT", project_id: project.id },
+      });
+  
+      let documentos: any[] = [];
+      if (user?.kycStatus === "APROBADO") {
+        const documentosKyc = await prisma.projectDocs.findMany({
+          where: { visible: true, user_rol_visible: "KYC", project_id: project.id },
+        });
+  
+        const owner = await prisma.orders.findFirst({
+          where: { user_id: user.id, status: "PAGADO_Y_ENTREGADO_Y_FIRMADO", project_id: project.id },
+        });
+  
+        const documentosOwner = owner
+          ? await prisma.projectDocs.findMany({ where: { visible: true, user_rol_visible: "OWNER", project_id: project.id } })
+          : [];
+  
+        documentos = owner ? documentosUser.concat(documentosKyc, documentosOwner) : documentosKyc.concat(documentosUser);
+      } else {
+        documentos = documentosUser;
+      }
+  
+      const docs = await Promise.all(
+        documentos.map(async (doc) => ({
+          id: doc.id,
+          rol: doc.rol,
+          path: await getDoc(doc.path),
+        }))
+      );
+  
+
       data.push({
         project,
         escenario,
         fechas,
         cuenta,
         imagenes,
-        userSale
-
+        userSale,
+        docs
       })
     }
     return res.json(data)

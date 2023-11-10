@@ -206,7 +206,9 @@ export const querySchemaCreate_project = Joi.object({
         country:Joi.string().required(),
         foto_dni_frontal:Joi.string().required(),
         foto_dni_trasera:Joi.string().optional(),
-        wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required()
+        wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required(),
+        estado_civil:Joi.string().required(),
+      regimen_matrimonial:Joi.string()
       });
       export const querySchemaCompraPartStripe= Joi.object({
         cantidad:Joi.number().required() ,cardNumber:Joi.string().min(13).required(),exp_month:Joi.string().required(),exp_year:Joi.string().required(),cvc:Joi.string().required().max(3),
@@ -267,5 +269,7 @@ export const querySchemaCreate_project = Joi.object({
                       country:Joi.string(),
                       foto_dni_frontal:Joi.string(),
                       foto_dni_trasera:Joi.string(),
-                      wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/)
+                      wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/),
+                      estado_civil:Joi.string(),
+                    regimen_matrimonial:Joi.string()
                     });

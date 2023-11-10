@@ -1,11 +1,11 @@
 import express from "express";
-import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, gestionVentaXREN, gestionVisibilidadDoc, getAllProjects, getAllProjectsPublic, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
+import { addDoc, addImage, cambiarStatusDeTransferenciaParaXREN, cambiarStatusDeTransferenciaParticipacion, changeRolUser, createProject, deleteImage, deleteUser, gestionVentaXREN, gestionVisibilidadDoc, getAllProjects, getAllProjectsPublic, getAllProjectsToAdmin, getAllUsersController, getCuentas, getTemplatesByPandaDoc, manageSaleUser, updateKYCStatus, updateProjectController, updateProjectCuenta, updateProjectEscenario, updateProjectEstado, updateProjectFechas, updateProjectTemplateDocs } from "../controllers/backoffice";
 import { isSuperAdmin } from "../middleware/isSuperAdmin";
 import { authenticateToken } from "../middleware/auth";
 import { isAdmin } from "../middleware/isAdmin";
 import { querySchemaAddDoc, querySchemaAddImage, querySchemaChangeAdmin, querySchemaCreate_project, querySchemaDeleteImage, querySchemaGestionVisibilidad, querySchemaGetKYCbyUser, querySchemaUpdateKycStatus, querySchemaUpdateProject, querySchemaUpdateProjectCuentas, querySchemaUpdateProjectEscenario, querySchemaUpdateProjectEstado, querySchemaUpdateProjectFechas, querySchemaUpdateProjectTemplate, querySchemaUpdateProjectUserSaleManage, querySchemaUpdateTransferParticipaciones, querySchemaUpdateTransferXren } from "../middleware/validation";
 import Joivalidator from "express-joi-validation";
-import { getkycUser } from "../controllers/user";
+import {  getkycUser } from "../controllers/user";
 
 const validator = Joivalidator.createValidator({passError: true});
 
@@ -67,6 +67,7 @@ router.post('/changeAdmin',validator.body(querySchemaChangeAdmin),isSuperAdmin,c
 /// gestion compra participaciones
 router.put("/update-transferencia-participacion",validator.body(querySchemaUpdateTransferParticipaciones),isAdmin,cambiarStatusDeTransferenciaParticipacion)
 
+router.delete('/deleteUsers',isAdmin,deleteUser)
 
 
 

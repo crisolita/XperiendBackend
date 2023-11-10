@@ -74,17 +74,17 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const now= moment()
     console.log(fecha_abierto_por_usuario,gestion.fecha_fin_venta)
       if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
-      await sendCompraTransferenciaEmail(USER.email,`${kycInfo.name} ${kycInfo.lastname}`,cuenta.numero,cuenta.banco,project.precio_unitario*cantidad,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT")
-        const order= await prisma.orders.create({
-        data:{
-        tipo:"COMPRA",
-        user_id:USER.id,
-        cantidad:cantidad,
-        project_id:project.id,
-        status:"PAGO_PENDIENTE",
-        fecha:new Date()
-        }
-    })
+      const order= await prisma.orders.create({
+      data:{
+      tipo:"COMPRA",
+      user_id:USER.id,
+      cantidad:cantidad,
+      project_id:project.id,
+      status:"PAGO_PENDIENTE",
+      fecha:new Date()
+      }
+  })
+      await sendCompraTransferenciaEmail(USER.email,`${kycInfo.name} ${kycInfo.lastname}`,cuenta.numero,cuenta.banco,cuenta.titular,`${project.concepto_bancario}_${order.id}_${USER.id}`)
 
       return res.status(200).json({order,concepto:project.concepto_bancario,numero:cuenta.numero,banco:cuenta.banco} );
     } catch ( error) {
@@ -231,7 +231,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
     if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
     const user = await getUserById(USER.id,prisma)
-    await sendCompraTransferenciaEmail(USER.email,user?.userName?user.userName:"querido usuario",cuenta.numero,cuenta.banco,project.precio_unitario,project.titulo,project.concepto_bancario? project.concepto_bancario :"Compra NFT por intercambio")
+    await sendCompraTransferenciaEmail(USER.email,`${kyc.name} ${kyc.lastname}`,cuenta.numero,cuenta.banco,cuenta.titular,`${project.concepto_bancario}_${order.id}_${USER.id}`)
 
     const newOrder= await updateOrder(order.id,{status:"PAGO_PENDIENTE",exchange_receiver:USER.id},prisma)
     res.json(newOrder)

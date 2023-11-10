@@ -42,6 +42,7 @@ model GestionXREN {
   numero      String?
   banco       String?
   concepto_bancario String?
+  titular     String?
   pagoTransferencia     Boolean?
   pagoTarjeta           Boolean?
   pagoCripto            Boolean?
@@ -62,6 +63,8 @@ model KycInfo {
   state           String
   document_number String
   country         String
+  estado_civil    Estado_civil
+  regimen_matrimonial String?
   status          StatusKYC
   wallet          String
   kycImages       KycImages[]
@@ -82,6 +85,7 @@ model Cuentas {
   id          Int        @id @default(autoincrement())
   numero      String
   banco       String
+  titular     String
   projects    Projects[]
 }
 
@@ -315,3 +319,10 @@ enum RolDoc {
   ECONOMICO
   DESCARGABLE
 }
+enum Estado_civil {
+  SOLTERO
+  CASADO
+  DIVORCIADO
+  SEPARADO
+  VIUDO
+} 

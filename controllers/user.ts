@@ -85,7 +85,7 @@ export const userGoogleController = async (req: Request, res: Response) => {
     const response = await axios.get(userInfoUrl);
     const userName= await createUsername(response.data.given_name,response.data.family_name,prisma)
     if(!response.data || !response.data.verified_email || !userName) return res.status(400).json({error:"Invalid Token"})
-    const exist= await getUserByGoogleID(response.data.id,prisma)
+    const exist= await getUserByEmail(response.data.email,prisma)
   let user;
   console.log(response.data)
   if(!exist ) {
@@ -318,7 +318,6 @@ export const getFavorites = async (req: Request, res: Response) => {
 
 export const userCanBuy = async (req: Request, res: Response) => {
   try {
-    const salt = bcrypt.genSaltSync();
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
      // @ts-ignore
@@ -338,4 +337,5 @@ export const userCanBuy = async (req: Request, res: Response) => {
     res.json({ error });
   }
 };
+
 

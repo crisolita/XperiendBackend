@@ -19,7 +19,7 @@ router.get('/ordersByUser',authenticateToken,ordersByUser)
 router.get('/pagos',isAdmin,allPagos)
 router.get('/pagosByUser',authenticateToken,pagosByUser)
 
-router.get('/documentosToUser',authenticateToken,documentosToUser)
+// router.get('/documentosToUser',authenticateToken,documentosToUser)
 
 
 export default router;

@@ -12,7 +12,8 @@ try {
    const prisma = req.prisma as PrismaClient;
    // @ts-ignore
    const USER = req.user as User;
-   const {name,lastname,country_born,birth,telf,address,document,document_number,city,postalCode,state,country,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
+   const {name,lastname,country_born,birth,estado_civil,
+    regimen_matrimonial,telf,address,document,document_number,city,postalCode,state,country,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
    const user= await getUserById(USER.id,prisma)
    const kycAlready= await getKycInfoByUser(USER.id,prisma)
    let info,dataImages=[];
@@ -38,6 +39,8 @@ try {
         state,
         country,
         wallet,
+        estado_civil,
+        regimen_matrimonial,
         status:"PENDIENTE"
       }
      })
@@ -104,7 +107,8 @@ export const updateKYC= async (req:Request,res: Response) => {
      const prisma = req.prisma as PrismaClient;
      // @ts-ignore
      const USER = req.user as User;
-     const {name,lastname,country_born,birth,telf,address,document_number,document,city,postalCode,state,country,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
+     const {name,lastname,estado_civil,
+      regimen_matrimonial,country_born,birth,telf,address,document_number,document,city,postalCode,state,country,foto_dni_frontal,foto_dni_trasera,wallet }= req.body;
      const user= await getUserById(USER.id,prisma)
      const kycAlready= await getKycInfoByUser(USER.id,prisma)
      let info;
@@ -115,7 +119,8 @@ export const updateKYC= async (req:Request,res: Response) => {
       return res.status(400).json({error:"Kyc no creado"})
      } else if(kycAlready?.status=="RECHAZADO") {
   
-    info=await updateKyc(kycAlready.id,{name,lastname,document_number,country_born,birth,telf,address,document,city,postalCode,state,country,wallet,status:"PENDIENTE"},prisma)
+    info=await updateKyc(kycAlready.id,{estado_civil,
+      regimen_matrimonial,name,lastname,document_number,country_born,birth,telf,address,document,city,postalCode,state,country,wallet,status:"PENDIENTE"},prisma)
     await updateUser(USER.id,{kycStatus:"PENDIENTE"},prisma)     
     if(foto_dni_frontal) {
             const path=`kyc_image_${user.id}_${info.id}_DNIFRONTAL`

@@ -5,7 +5,7 @@ import { saleContract } from "../service/web3";
 import {ethers} from 'ethers'
 import { createCharge } from "../service/stripe";
 import { crearPago } from "../service/pagos";
-import { sendCompraTransferenciaEmail, sendThanksBuyEmail } from "../service/mail";
+import { sendCompraTransferenciaEmail, sendThanksBuyEmail, sendWelcomeClub } from "../service/mail";
 import { getGestion } from "../service/backoffice";
 
 export const compraXRENStripe = async (req: Request, res: Response) => {
@@ -47,7 +47,7 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
           fecha:new Date()
         }
       })
-      await sendThanksBuyEmail(user.email,tokenAmount,"TARJETA DE CREDITO")
+      await sendWelcomeClub(user.email,user.userName? user.userName:"querido usuario")      
       return res.status(200).json({pago,order});
     } catch ( error) {
       console.log(error)
@@ -64,7 +64,7 @@ const USER= req.user as User;
 const {tokenAmount}= req.body;
 const phase= await saleContract.functions.getcurrentPhase()
 const gestion= await getGestion(prisma)
-if(!gestion?.pagoTransferencia || !gestion.numero || !gestion.banco) return res.status(400).json({error:"No se permite pago con transferencia"})
+if(!gestion?.pagoTransferencia || !gestion.numero || !gestion.banco || !gestion.titular) return res.status(400).json({error:"No se permite pago con transferencia"})
 const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
 const order = await prisma.ordersXREN.create({
   data:{
@@ -78,7 +78,7 @@ const order = await prisma.ordersXREN.create({
 })
 // de donde saco la cuenta?
 const user= await getUserById(USER.id,prisma)
-await sendCompraTransferenciaEmail(USER.email,user?.userName?user.userName:"querido usuario",gestion.numero,gestion.banco,tokenAmount,"Compra XREN","Compra XREN")
+await sendCompraTransferenciaEmail(USER.email,user?.userName?user.userName:"querido usuario",gestion.numero,gestion.banco,gestion.titular,`${gestion.concepto_bancario}_${order.id}_${USER.id}`)
 return res.status(200).json(order);
     } catch ( error) {
       console.log(error)
@@ -111,7 +111,8 @@ return res.status(200).json(order);
           fecha:new Date()
         }
       })
-      await sendThanksBuyEmail(user.email,tokenAmount,`${cripto}`)
+      await sendWelcomeClub(user.email,user.userName? user.userName:"querido usuario")      
+
       return res.status(200).json({pago,order});
     } catch ( error) {
       console.log(error)

@@ -83,7 +83,7 @@ export const updateProject = async (
 };
 export const createGestionXREN = async (
   data:{
- numero?:string, banco?:string,pagoTransferencia?:boolean,
+ numero?:string, banco?:string,pagoTransferencia?:boolean,titular?:string,
  pagoTarjeta?:boolean,
  pagoCripto?:boolean,
  concepto_bancario?:string
@@ -100,7 +100,7 @@ export const updateGestionXREN = async (
   id:number,
   data:{
  numero?:string, banco?:string,pagoTransferencia?:boolean,
- pagoTarjeta?:boolean,
+ pagoTarjeta?:boolean,titular?:string,
  pagoCripto?:boolean,
  concepto_bancario?:string
   },
@@ -118,3 +118,4 @@ export const getGestion = async (
 ) => {
   return await prisma.gestionXREN.findFirst();
 };
+

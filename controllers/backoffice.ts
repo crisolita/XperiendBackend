@@ -9,7 +9,7 @@ import { crearDocumentoDeCompra, crearDocumentoDeIntercambio, getTemplates, isVa
 import { getAllUsers, getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract, xperiendNFT } from "../service/web3";
-import { sendKycAprobado, sendKycRechazado, sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail, sendTransferenciaRecibida } from "../service/mail";
+import { sendKycAprobado, sendKycRechazado, sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail, sendTransferenciaRecibida, sendWelcomeClub } from "../service/mail";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -235,6 +235,7 @@ export const convertFullName = (str: string) =>
       const {
         project_id,
         numero,
+        titular,
         banco,concepto_bancario
       }= req.body;
       let data;
@@ -245,7 +246,8 @@ export const convertFullName = (str: string) =>
            const newCuenta=await prisma.cuentas.create({
             data:{
               numero,
-              banco
+              banco,
+              titular
             }
           })
           data=await updateProject(project_id,{cuenta_id:newCuenta.id,concepto_bancario},prisma)
@@ -758,8 +760,6 @@ export const getAllUsersController = async (req: Request, res: Response) => {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     const users = await getAllUsers(prisma);
-    console.log(users)
-    let kycImages;
     let data=[];
     for (let user of users) {
      
@@ -767,9 +767,11 @@ export const getAllUsersController = async (req: Request, res: Response) => {
         userId:user.id,
        userName:user.userName,
        googleId:user.googleID,
+       user_rol:user.userRol,
         email: user.email,
         referrallFriend:user.referallFriend,
         newsletter:user.newsletter,
+        kycStatus:user.kycStatus
      
       });
     }
@@ -785,17 +787,17 @@ export const gestionVentaXREN=async(req:Request, res:Response) => {
   try {
        // @ts-ignore
    const prisma = req.prisma as PrismaClient;
-   const {numero,banco,  pagoTransferencia,
+   const {numero,banco, titular,pagoTransferencia,
     pagoTarjeta,
     pagoCripto,concepto_bancario}=req.body;
    const exist = await prisma.gestionXREN.findFirst() 
    let gestionXREN
   if (!exist && numero && banco) {
-    gestionXREN= await createGestionXREN({numero,banco,pagoTransferencia,
+    gestionXREN= await createGestionXREN({numero,banco,pagoTransferencia,titular,
       pagoTarjeta,
       pagoCripto,concepto_bancario},prisma)
   } else if(exist) {
-    gestionXREN= await updateGestionXREN(exist.id,{numero,banco,pagoTransferencia,
+    gestionXREN= await updateGestionXREN(exist.id,{numero,banco,pagoTransferencia,titular,
       pagoTarjeta,
       pagoCripto,concepto_bancario},prisma)
   }
@@ -827,6 +829,8 @@ const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
 
          newOrder= await prisma.ordersXREN.update({where:{id:order.id},data:{hash:mint.hash,status:"PAGO_EXITOSO_ENTREGADO"}})
          await sendTransferenciaRecibida(user.email,user.userName? user.userName:"querido usuario")
+         await sendWelcomeClub(user.email,user.userName? user.userName:"querido usuario")      
+
          return res.status(200).json({pago,newOrder});
 
     } else  {
@@ -895,5 +899,26 @@ export const getGestionVentaXREN=async(req:Request, res:Response) => {
   } catch (e) {
     console.log(e)
     res.status(500).json({error:e})
+  }
+};
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+     const {users_id}= req.body;
+     let deletes=[];
+     for(let user_id of users_id) {
+       const user= await getUserById(user_id,prisma)
+       if(!user) continue
+        const kyc= await getKycInfoByUser(user.id,prisma)
+        if(kyc) continue
+    
+        deletes.push(await prisma.user.delete({where:{id:user_id}}))
+     }
+     res.json(deletes)
+   }
+  catch (error ) {
+    console.log(error)
+    res.json({ error });
   }
 };

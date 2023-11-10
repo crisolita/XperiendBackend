@@ -67,7 +67,7 @@ router.post('/changeAdmin',validator.body(querySchemaChangeAdmin),isSuperAdmin,c
 /// gestion compra participaciones
 router.put("/update-transferencia-participacion",validator.body(querySchemaUpdateTransferParticipaciones),isAdmin,cambiarStatusDeTransferenciaParticipacion)
 
-router.delete('/deleteUsers',isAdmin,deleteUser)
+router.post('/deleteUsers',isAdmin,deleteUser)
 
 
 

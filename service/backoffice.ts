@@ -31,15 +31,19 @@ export const getProjectById = async (id: number, prisma: PrismaClient) => {
 export const updateFechas = async (
   id: number,
   data: {  
-    fecha_inicio_reinversion?:Date | null,
-    fecha_fin_venta?:Date | null,
-    fecha_fin_reinversion?:Date| null,
-    fecha_reclamo?:Date| null,
-    fecha_inicio_intercambio?:Date| null,
-    fecha_fin_intercambio?:Date| null,
-    visible_user?:boolean| null,
-    visible_premium?:boolean| null,
-    visible_gold?:boolean| null
+    fecha_inicio_reinversion?:Date,
+    fecha_fin_venta?:Date,
+    fecha_fin_reinversion?:Date,
+    fecha_fin_reclamo?:Date,
+    fecha_inicio_reclamo?:Date,
+    fecha_inicio_intercambio?:Date,
+    fecha_fin_intercambio?:Date,
+    visible_user?:boolean,
+    visible_premium?:boolean,
+    visible_gold?:boolean,
+    visible_intercambio?:boolean,
+    visible_reclamo?:boolean,
+    visible_reinversion?:boolean
    },
   prisma: PrismaClient
 ) => {

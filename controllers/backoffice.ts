@@ -9,7 +9,7 @@ import { crearDocumentoDeCompra, crearDocumentoDeIntercambio, getTemplates, isVa
 import { getAllUsers, getKycInfoByUser, getUserById, updateKyc, updateUser } from "../service/user";
 import { ethers } from "ethers";
 import { saleContract, xperiendNFT } from "../service/web3";
-import { sendKycAprobado, sendKycRechazado, sendPagoCancelado, sendPagoDevuelto, sendThanksBuyEmail, sendTransferenciaRecibida, sendWelcomeClub } from "../service/mail";
+import { compraAnuladaNoFirma, compraAnuladaNoPagado, compraRealizadaInvesthome, sendKycAprobado, sendKycRechazado, sendPagoCanceladoXREN, sendTransferenciaRecibidaParticipaciones, sendWelcomeClub } from "../service/mail";
 
 export const convertFullName = (str: string) =>
   str.split(", ").reverse().join(" ");
@@ -184,13 +184,17 @@ export const convertFullName = (str: string) =>
         project_id,       
         fecha_inicio_reinversion,
         fecha_fin_reinversion,
-        fecha_reclamo,
+        fecha_fin_reclamo,
+        fecha_inicio_reclamo,
         fecha_fin_venta,
         fecha_inicio_intercambio,
         fecha_fin_intercambio,
         visible_user,
         visible_premium,
-        visible_gold
+        visible_gold,
+        visible_intercambio,
+        visible_reclamo,
+        visible_reinversion
       }= req.body;
       let data;
       
@@ -198,13 +202,17 @@ export const convertFullName = (str: string) =>
         if(exist) {
          data=await updateFechas(project_id,{ fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): undefined,
           fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): undefined,
-        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): undefined,
+        fecha_fin_reclamo:fecha_fin_reclamo? new Date(fecha_fin_reclamo): undefined,
+        fecha_inicio_reclamo:fecha_inicio_reclamo? new Date(fecha_inicio_reclamo): undefined,
         fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): undefined,
         fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): undefined,
         fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): undefined,
         visible_user,
         visible_premium,
-        visible_gold},prisma)
+        visible_gold,
+        visible_intercambio,
+        visible_reclamo,
+        visible_reinversion},prisma)
         } else {
           data= await prisma.gestion_fechas.create({
             data:{
@@ -212,8 +220,9 @@ export const convertFullName = (str: string) =>
               fecha_fin_venta:fecha_fin_venta? new Date(fecha_fin_venta): undefined,
             fecha_inicio_reinversion:fecha_inicio_reinversion? new Date(fecha_inicio_reinversion): undefined,
           fecha_fin_reinversion:fecha_fin_reinversion? new Date(fecha_fin_reinversion): undefined,
-        fecha_reclamo:fecha_reclamo? new Date(fecha_reclamo): undefined,
-        fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): undefined,
+          fecha_fin_reclamo:fecha_fin_reclamo? new Date(fecha_fin_reclamo): undefined,
+        fecha_inicio_reclamo:fecha_inicio_reclamo? new Date(fecha_inicio_reclamo): undefined,
+       fecha_inicio_intercambio:fecha_inicio_intercambio? new Date(fecha_inicio_intercambio): undefined,
         fecha_fin_intercambio:fecha_fin_intercambio? new Date(fecha_fin_intercambio): undefined,
         visible_user,
         visible_premium,
@@ -358,17 +367,26 @@ export const convertFullName = (str: string) =>
       template_id,
       document_type
       }= req.body;
+      let data;
           const isValid= await isValidTemplate(template_id)
           if(!isValid) return res.status(404).json({error:"Template no encontrado en PandaDoc"})
-          const isAlready=await prisma.templates.findUnique({where:{id:template_id}})
+          const isAlreadyID=await prisma.templates.findUnique({where:{id:template_id}})
+          const isAlready= await prisma.templates.findFirst({where:{project_id,document_type}})
           const project= await getProjectById(project_id,prisma)
-          if(isAlready || !project) return res.status(400).json({error:"Template ya guardado o proyecto no encontrado"})
-              const data= await prisma.templates.create({
-              data:{
-              id:template_id,
-              project_id:project_id,
-              document_type
-            }})
+          if( isAlreadyID || !project) return res.status(400).json({error:"Template ya guardado o proyecto no encontrado"})
+             if( isAlready) {
+              data=await prisma.templates.update({where:{id:isAlready.id},
+                data:{
+                id:template_id
+              }})
+             } else {
+              data= await prisma.templates.create({
+                data:{
+                id:template_id,
+                project_id:project_id,
+                document_type
+              }})
+             }
       return res.status(200).json(data);
     } catch ( error) {
       console.log(error)
@@ -424,17 +442,21 @@ export const manageSaleUser = async (req: Request, res: Response) => {
     res.status(500).json( error );
   }
 };
-  
+
 /// gestion de pagos por transferencia bancaria 
- //endpoint que va a llamar el admin
- export const cambiarStatusDeTransferenciaParticipacion = async (req: Request, res: Response) => {
+//endpoint que va a llamar el admin
+export const cambiarStatusDeTransferenciaParticipacion = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-  
+    
     const {order_id,amountUSD,status,fecha_recibido,fecha_devolucion}= req.body;
     const order= await getOrderById(order_id,prisma)
     if(!order) return res.status(404).json({error:"Orden no encontrada"})
+    let user= await getUserById(order.user_id,prisma)
+    let kyc= await getKycInfoByUser(order.user_id,prisma)
+
+  if(!user) return res.status(404).json({error:"Usuario no encontrado"})
     const project= await getProjectById(order.project_id,prisma)
    let pago,template;
     if(status=='CONFIRMADO') {
@@ -450,8 +472,12 @@ export const manageSaleUser = async (req: Request, res: Response) => {
         
       const docData= await crearDocumentoDeCompra(order.user_id,project.id,template.id,prisma)
       if(!docData) return res.status(500).json({error:"Falla al crear documento"})
-        const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR",cantidad:result},prisma)
-        return res.status(200).json({pago,newOrder});
+        
+      const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR",cantidad:result},prisma)
+      await sendTransferenciaRecibidaParticipaciones(user?.email,`${kyc?.name} ${kyc?.lastname}`)
+      await compraRealizadaInvesthome(user.email,`${kyc?.name} ${kyc?.lastname}`)
+
+      return res.status(200).json({pago,newOrder});
       } else if (order?.tipo=="INTERCAMBIO") {
         if(!project || !project.precio_unitario  || !order.exchange_receiver) return res.status(400).json({error:"No es una transaccion de usuario y/o montos definidos"})
         template=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
@@ -469,15 +495,15 @@ export const manageSaleUser = async (req: Request, res: Response) => {
     } else if(status=="CANCELADO"){
       const user= await getUserById(order.user_id,prisma)
       if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
-      await sendPagoCancelado(user?.email,order.id,`TRANSFERENCIA POR COMPRA DE PARTIPACION EN EL PROYECTO ${project?.titulo}`)
       const newOrder= await updateOrder(order.id,{status:"PAGO_CANCELADO"},prisma)
+      await compraAnuladaNoPagado(user.email,`${kyc?.name} ${kyc?.lastname}`)
       return res.status(200).json(newOrder);
     } 
     else if (status=="DEVUELTO") {
       const user= await getUserById(order.user_id,prisma)
       if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
-      await sendPagoDevuelto(user?.email,order.id,`TRANSFERENCIA POR COMPRA DE PARTIPACION EN EL PROYECTO ${project?.titulo} HA SIDO DEVUELTA`,amountUSD,fecha_devolucion)
       const newOrder= await updateOrder(order.id,{status:"PAGO_DEVUELTO"},prisma)
+      await compraAnuladaNoFirma(user.email,`${kyc?.name} ${kyc?.lastname}`)
       return res.status(200).json(newOrder);
     }
   }
@@ -745,8 +771,8 @@ export const updateKYCStatus=async(req:Request, res:Response) => {
    if(!user) return res.status(404).json({error:"Usuario no valido"})
   await updateUser(kyc.user_id,{kycStatus:status,motivo_rechazo_kyc},prisma)
    const updated= await updateKyc(kyc_id,{status},prisma)
-   if (status=="APROBADO") await sendKycAprobado(user.email,user.userName? user.userName :"querido usuario")
-   if (status=="RECHAZADO") await sendKycRechazado(user.email,motivo_rechazo_kyc,user.userName? user.userName :"querido usuario")
+   if (status=="APROBADO") await sendKycAprobado(user.email,`${kyc.name} ${kyc.lastname}`)
+   if (status=="RECHAZADO") await sendKycRechazado(user.email,`${kyc.name} ${kyc.lastname}`)
 
   return res.json(updated)
   } catch (e) {
@@ -818,18 +844,17 @@ export const cambiarStatusDeTransferenciaParaXREN= async (req: Request, res: Res
   if(!order) return res.status(404).json({error:"Orden no encontrada"})
   const user= await getUserById(order.user_id,prisma)
 if(!user) return res.status(404).json({error:"USUARIO NO ENCONTRADO"})
-const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
+const kyc= await getKycInfoByUser(user.id,prisma)
 
     let newOrder;
     if(success) {
         if(order?.tipo!=="COMPRA") return res.status(400).json({error:"No es una transaccion de compra"})
     
-         pago = await crearPago(order.user_id,order.amountUSD,"TRANSFERENCIA_BANCARIA",new Date(),`Compra de ${order.unidades} XREN`,prisma)
-        const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(order.unidades.toString()),wallet)
+         pago = await crearPago(order.user_id,order.amountEUR,"TRANSFERENCIA_BANCARIA",new Date(),`Compra de ${order.unidades} XREN`,prisma)
+        const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(order.unidades.toString()),kyc?.wallet)
 
          newOrder= await prisma.ordersXREN.update({where:{id:order.id},data:{hash:mint.hash,status:"PAGO_EXITOSO_ENTREGADO"}})
-         await sendTransferenciaRecibida(user.email,user.userName? user.userName:"querido usuario")
-         await sendWelcomeClub(user.email,user.userName? user.userName:"querido usuario")      
+         await sendWelcomeClub(user.email,`${kyc?.name} ${kyc?.lastname}`)
 
          return res.status(200).json({pago,newOrder});
 

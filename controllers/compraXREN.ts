@@ -5,8 +5,10 @@ import { saleContract } from "../service/web3";
 import {ethers} from 'ethers'
 import { createCharge } from "../service/stripe";
 import { crearPago } from "../service/pagos";
-import { sendCompraTransferenciaEmail, sendThanksBuyEmail, sendWelcomeClub } from "../service/mail";
 import { getGestion } from "../service/backoffice";
+import { sendCompraTransferenciaEmailXREN, sendWelcomeClub } from "../service/mail";
+import axios from "axios";
+const APIKEYRATES="fca_live_cLgxgrhTJuHjvNc5DQSDiiC9ElM4qcrPs2TmZrq5"
 
 export const compraXRENStripe = async (req: Request, res: Response) => {
   // @ts-ignore
@@ -23,12 +25,13 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
     const gestion= await getGestion(prisma)
     if(!gestion?.pagoTarjeta) return res.status(400).json({error:"No se permite pago con tarjeta"})
     const phase= await saleContract.functions.getcurrentPhase()
-    console.log('he llegado aca soy phase',phase,"waller",wallet)
+    let kyc= await getKycInfoByUser(USER.id, prisma)
 
-
-    const amount=Number(ethers.utils.formatEther(phase[0].price))*100*tokenAmount
-      console.log('he llegado aca soy amount',amount)
-    if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
+    let amount=Number(ethers.utils.formatEther(phase[0].price))*100*tokenAmount
+     let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
+    
+     amount=amount*Number(cambio.data.data.EUR)
+      if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
 
       // Cargo en stripe
         const charge= await createCharge(user.id,cardNumber,exp_month,exp_year,cvc,amount,prisma)
@@ -41,13 +44,13 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
           tipo:"COMPRA",
           user_id:USER.id,
           status:"PAGO_EXITOSO_ENTREGADO",
-          amountUSD:amount/100,
+          amountEUR:amount/100,
           unidades:tokenAmount,
           hash:mint.hash,
           fecha:new Date()
         }
       })
-      await sendWelcomeClub(user.email,user.userName? user.userName:"querido usuario")      
+      await sendWelcomeClub(user.email,`${kyc?.name} ${kyc?.lastname}`)      
       return res.status(200).json({pago,order});
     } catch ( error) {
       console.log(error)
@@ -63,22 +66,30 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
 const USER= req.user as User;
 const {tokenAmount}= req.body;
 const phase= await saleContract.functions.getcurrentPhase()
+
 const gestion= await getGestion(prisma)
 if(!gestion?.pagoTransferencia || !gestion.numero || !gestion.banco || !gestion.titular) return res.status(400).json({error:"No se permite pago con transferencia"})
-const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
+let amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
+let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
+    
+amount=amount*Number(cambio.data.data.EUR)
+ if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
+
+///cambio
 const order = await prisma.ordersXREN.create({
   data:{
     tipo:"COMPRA",
     user_id:USER.id,
     status:"PAGO_PENDIENTE",
-    amountUSD:amount,
+    amountEUR:amount,
     unidades:tokenAmount,
     fecha:new Date()
   }
 })
 // de donde saco la cuenta?
 const user= await getUserById(USER.id,prisma)
-await sendCompraTransferenciaEmail(USER.email,user?.userName?user.userName:"querido usuario",gestion.numero,gestion.banco,gestion.titular,`${gestion.concepto_bancario}_${order.id}_${USER.id}`)
+const kyc= await getKycInfoByUser(USER.id,prisma)
+await sendCompraTransferenciaEmailXREN(USER.email,`${kyc?.name} ${kyc?.lastname}`,gestion.numero,gestion.banco,gestion.titular,`${gestion.concepto_bancario}_${order.id}_${USER.id}`,amount.toString())
 return res.status(200).json(order);
     } catch ( error) {
       console.log(error)
@@ -96,7 +107,12 @@ return res.status(200).json(order);
     if(!user) return res.json({error:"Usuario no encontrado"})
         const phase= await saleContract.functions.getcurrentPhase()
 
-          const amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
+          let amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
+          let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
+  
+          amount=amount*Number(cambio.data.data.EUR)
+           if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
+     
           const gestion= await getGestion(prisma)
           if(!gestion?.pagoCripto) return res.status(400).json({error:"No se permite pago con cripto"})
       const pago = await crearPago(USER.id,tokenAmount,cripto=="USDT"? "USDT":"BUSD",new Date(),`Compra de ${tokenAmount} XREN`,prisma)
@@ -106,7 +122,7 @@ return res.status(200).json(order);
           user_id:USER.id,
           status:"PAGO_EXITOSO_ENTREGADO",
           unidades:tokenAmount,
-          amountUSD:amount,
+          amountEUR:amount,
           hash:hash,
           fecha:new Date()
         }

@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken } from "../middleware/auth";
-import { allPagos, compraParticipacionStripe, compraParticipacionTransferenciaBancaria, createIntercambio, documentosToUser, orders, ordersByUser, pagosByUser, prueba  } from "../controllers/participaciones";
+import { allPagos, compraParticipacionStripe, compraParticipacionTransferenciaBancaria, createIntercambio, documentosToUser, orders, ordersByUser, pagosByUser, prueba, signedDocument  } from "../controllers/participaciones";
 import { isKycRequired } from "../middleware/kycRequired";
 import { isAdmin } from "../middleware/isAdmin";
 
@@ -12,6 +12,9 @@ router.post("/compra-participacion-stripe", isKycRequired, compraParticipacionSt
 
 router.get("/prueba",prueba)
 router.post("/createExchange",createIntercambio)
+
+router.post("/signed",isKycRequired,signedDocument)
+
 
 router.get('/orders',isAdmin,orders)
 router.get('/ordersByUser',authenticateToken,ordersByUser)

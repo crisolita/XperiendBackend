@@ -5,12 +5,12 @@ import moment from "moment";
 import { createCharge } from "../service/stripe";
 import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTipoDeUsuario, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
-import { sendCompraTransferenciaEmail } from "../service/mail";
 import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, crearDocumentoReclamacion, crearDocumentoReinversion, isCompleted } from "../service/pandadoc";
 import { getKycInfoByUser, getUserById } from "../service/user";
 import fetch from "node-fetch";
 import { xperiendNFT } from "../service/web3";
 import { getDoc } from "../service/aws";
+import { compraRealizadaInvesthome, intercambioTransferenciaPendiente, sendTransferenciaPendienteParticipaciones, sendWelcomeClub } from "../service/mail";
 export const compraParticipacionStripe = async (req: Request, res: Response) => {
     try {
       // @ts-ignore
@@ -50,6 +50,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
         status:"POR_FIRMAR"
         }
     })
+     await compraRealizadaInvesthome(USER.email,`${kycInfo.name} ${kycInfo.lastname}`)
       return res.status(200).json({pago,order} );
     } catch ( error) {
       console.log(error)
@@ -72,7 +73,6 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       if(!cuenta) return res.status(404).json({error:"Cuenta bancaria no encontrada"})
       if(project.cantidadRestante<cantidad) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
       const now= moment()
-    console.log(fecha_abierto_por_usuario,gestion.fecha_fin_venta)
       if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
       const order= await prisma.orders.create({
       data:{
@@ -84,7 +84,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       fecha:new Date()
       }
   })
-      await sendCompraTransferenciaEmail(USER.email,`${kycInfo.name} ${kycInfo.lastname}`,cuenta.numero,cuenta.banco,cuenta.titular,`${project.concepto_bancario}_${order.id}_${USER.id}`)
+      await sendTransferenciaPendienteParticipaciones(USER.email,`${kycInfo.name} ${kycInfo.lastname}`,cuenta.numero,cuenta.banco,cuenta.titular,`${project.concepto_bancario}_${order.id}_${USER.id}`,(project.precio_unitario*cantidad).toString())
 
       return res.status(200).json({order,concepto:project.concepto_bancario,numero:cuenta.numero,banco:cuenta.banco} );
     } catch ( error) {
@@ -231,8 +231,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
     if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
     const user = await getUserById(USER.id,prisma)
-    await sendCompraTransferenciaEmail(USER.email,`${kyc.name} ${kyc.lastname}`,cuenta.numero,cuenta.banco,cuenta.titular,`${project.concepto_bancario}_${order.id}_${USER.id}`)
-
+    await intercambioTransferenciaPendiente(USER.email,`${kyc.name} ${kyc.lastname}`,cuenta.banco,cuenta.numero,`${project.concepto_bancario}_${orderId}_${USER.id}`,cuenta.titular)
     const newOrder= await updateOrder(order.id,{status:"PAGO_PENDIENTE",exchange_receiver:USER.id},prisma)
     res.json(newOrder)
     } catch ( error) {
@@ -256,7 +255,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const gestion= await getGestionByProjectId(project.id,prisma)
     const now= moment()
 
-    if(!now.isAfter(moment(gestion?.fecha_reclamo)) ) return res.status(400).json({error:"No esta en la etapa de intercambio"})
+    if(!now.isBetween(moment(gestion?.fecha_inicio_reclamo),moment(gestion?.fecha_fin_reclamo)))  return res.status(400).json({error:"No esta en la etapa de intercambio"})
     const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"RECLAMACION"}})
     if(!template) return res.status(404).json({error:"Template no encotrado"})
 

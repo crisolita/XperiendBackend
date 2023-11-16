@@ -41,8 +41,8 @@ router.post("/updateDocVisibilidad",validator.body(querySchemaGestionVisibilidad
 router.get("/cuentas",getCuentas)
 router.get("/getKycByUser",isAdmin,getkycUser)
 
-router.get("/templates",getTemplatesByPandaDoc)
-router.get("/users",getAllUsersController)
+router.get("/templates",isAdmin,getTemplatesByPandaDoc)
+router.get("/users",isAdmin,getAllUsersController)
 
 
 /// elimino este?

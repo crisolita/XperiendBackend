@@ -2,9 +2,9 @@ import * as pd_api from "pandadoc-node-client";
 import { getKycInfoByUser, getUserById } from "./user";
 import { PrismaClient} from "@prisma/client";
 import { getProjectById } from "./backoffice";
-import { DocumentType } from "aws-sdk";
 // replace it with your API key
-const API_KEY = "4eb0dfbe4c091333e7fd909a3dd16fe2b5ecb054";
+const API_KEY = process.env.PANDADOC_KEY;
+
 const configuration = pd_api.createConfiguration(
     { authMethods: {apiKey: `API-Key ${API_KEY}`} }
 );
@@ -42,7 +42,7 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,temp
     const project=await getProjectById(project_id,prisma)
     if(user ) {
             const kycInfo= await getKycInfoByUser(user?.id,prisma)
-
+if(!kycInfo) return undefined
         const documentCreateRequest: pd_api.DocumentCreateRequest = {
             name: "Documento de Compra",
             templateUuid:template_id,
@@ -50,33 +50,75 @@ export const crearDocumentoDeCompra= async (userId:number,project_id:number,temp
             recipients: [
               {
                 email: user.email,
-                firstName: kycInfo?.name,
-                lastName: kycInfo?.lastname,
+                firstName: kycInfo.name,
+                lastName: kycInfo.lastname,
                 role:"Client",
                 signingOrder: 1,
               }
             ],
             "tokens": [
               {
-                  "name": "Client.Company",
-                  "value": `${user.id}`
+                  "name": "Client.nombre",
+                  "value": `${kycInfo.name}`
               },
               {
-                  "name": "Client.FirstName",
-                  "value": `${kycInfo?.name}`
+                  "name": "Client.apellidos",
+                  "value": `${kycInfo.lastname}`
               },
               {
-                  "name": "Client.LastName",
-                  "value": `${kycInfo?.lastname}`
+                  "name": "Client.tipo_identidad",
+                  "value": `${kycInfo.document}`
               },
               {
-                "name": "project.name",
-                "value": `${project?.titulo}`
+                "name": "Client.num_identidad",
+                "value": `${kycInfo.document_number}`
             },
             {
-              "name": "project.id",
-              "value": `${project?.id}`
-          }
+              "name": "Client.direccion",
+              "value": `${kycInfo.address}`
+          },
+            {
+              "name": "Client.postal",
+              "value": `${kycInfo.postalCode}`
+          },
+      {
+          "name": "Client.pais",
+          "value": `${kycInfo.country}`
+      },   {
+        "name": "Client.fecha_nacimiento",
+        "value": `${new Date(kycInfo.birth).toLocaleDateString()}`
+    },
+    {
+      "name": "Client.pais_nacimiento",
+      "value": `${kycInfo.country_born}`
+  },
+  {
+    "name": "Client.provincia",
+    "value": `${kycInfo.state}`
+},
+{
+  "name": "Client.localidad",
+  "value": `${kycInfo.city}`
+},
+  {
+    "name": "Client.estado_civil",
+    "value": `${kycInfo.estado_civil}`
+},
+{
+  "name": "Client.reg_matrimonio",
+  "value": `${kycInfo.regimen_matrimonial? kycInfo.regimen_matrimonial: null}`
+},
+{
+  "name": "Client.telefono",
+  "value": `${kycInfo.telf}`
+},{
+"name": "Client.email",
+"value": `${user.email}`
+},
+{
+  "name": "Document.fecha_hoy",
+  "value": `${new Date().toLocaleDateString()}`
+  }
           ],
           };
           const document= await apiInstanceDocuments.createDocument({

@@ -26,7 +26,7 @@ const stripe = new Stripe(process.env.ENV="TEST"?process.env.SK_TEST?process.env
         // );
         const charge = await stripe.paymentIntents.create({
           amount: amount,
-          currency: 'usd',
+          currency: 'eur',
           payment_method:'pm_card_visa',
           confirm:true,
           customer:customer.id,

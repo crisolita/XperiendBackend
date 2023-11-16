@@ -1,4 +1,4 @@
-import { Estado_civil, PrismaClient, Projects, StatusKYC, USERROL } from "@prisma/client";
+import { Estado_civil, NIVEL_DE_INVERSION, PrismaClient, Projects, Regimen_matrimonial, StatusKYC, USERROL } from "@prisma/client";
 
 export const getUserById = async (id: number, prisma: PrismaClient) => {
   return await prisma.user.findUnique({
@@ -49,7 +49,7 @@ export const getKycInfoByUser = async (
 export const updateKyc = async (
   id: number,
   data: { status?:StatusKYC,estado_civil?:Estado_civil,
-    regimen_matrimonial?:string,document_number?:string,motivo_rechazo?:string,name?:string,lastname?:string,country_born?:string,birth?:Date,telf?:string,address?:string,document?:string,city?:string,postalCode?:number,state?:string,country?:string,wallet?:string},
+    regimen_matrimonial?:Regimen_matrimonial,document_number?:string,motivo_rechazo?:string,name?:string,lastname?:string,country_born?:string,birth?:Date,telf?:string,nivel_inversion?:NIVEL_DE_INVERSION,address?:string,document?:string,city?:string,postalCode?:string,state?:string,country?:string,wallet?:string},
   prisma: PrismaClient
 ) => {
   return await prisma.kycInfo.update({

@@ -59,14 +59,17 @@ model KycInfo {
   telf            String
   address         String
   city            String
-  postalCode      Int
+  cuenta_bancaria String
+  postalCode      String
   state           String
   document_number String
   country         String
+  prueba_titularidad Boolean?
   estado_civil    Estado_civil
-  regimen_matrimonial String?
+  nivel_inversion NIVEL_DE_INVERSION
+  regimen_matrimonial Regimen_matrimonial?
   status          StatusKYC
-  wallet          String
+  wallet          String @unique
   kycImages       KycImages[]
   user            User        @relation(fields: [user_id], references: [id])
 }
@@ -74,7 +77,7 @@ model KycInfo {
 model Pagos {
   id             Int          @id @default(autoincrement())
   user_id        Int
-  montoUSD       Float
+  montoEUR       Float
   metodo_de_pago METODODEPAGO
   concepto       String?
   fecha          DateTime
@@ -110,13 +113,17 @@ model Gestion_fechas {
   project_id               Int       @unique
   fecha_inicio_intercambio DateTime?
   fecha_fin_intercambio    DateTime?
-  fecha_reclamo            DateTime?
+  fecha_inicio_reclamo       DateTime?
+  fecha_fin_reclamo            DateTime?
   fecha_inicio_reinversion DateTime?
   fecha_fin_reinversion    DateTime?
   fecha_fin_venta          DateTime?
   visible_user             Boolean?
   visible_premium          Boolean?
   visible_gold             Boolean?
+  visible_intercambio     Boolean?
+  visible_reclamo     Boolean?
+  visible_reinversion     Boolean?
   project                  Projects  @relation(fields: [project_id], references: [id])
 }
 
@@ -214,7 +221,7 @@ model OrdersXREN {
   user_id   Int
   status    StatusOrderXREN
   unidades  Int
-  amountUSD Float
+  amountEUR Float
   hash      String?
   fecha     DateTime?
   user      User            @relation(fields: [user_id], references: [id])
@@ -271,6 +278,8 @@ enum RolImage {
   DNIFRONTAL
   DNITRASERA
   USERDNI
+  RESIDENCIA_FISCAL
+  TITULAR_CUENTA
 }
 
 enum Escenario {
@@ -326,3 +335,13 @@ enum Estado_civil {
   SEPARADO
   VIUDO
 } 
+enum Regimen_matrimonial {
+  GANANCIAS
+  SEPARACION_DE_BIENES
+}
+enum NIVEL_DE_INVERSION {
+  A_0_10000
+ B_10_50000
+ C_50000_100000
+ D_100000
+}

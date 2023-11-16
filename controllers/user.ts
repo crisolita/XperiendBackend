@@ -242,7 +242,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
         favs.push(project)
       }
     }
-    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter,favs,motivo_rechazo_kyc:user?.motivo_rechazo_kyc})
+    const kycInfo=await getKycInfoByUser(USER.id,prisma)
+    return res.json({email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter,favs,motivo_rechazo_kyc:user?.motivo_rechazo_kyc,kycInfo:kycInfo?.status=="RECHAZADO"? kycInfo :null})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

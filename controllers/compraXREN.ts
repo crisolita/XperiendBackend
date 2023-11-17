@@ -73,7 +73,6 @@ let amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
 let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
     
 amount=amount*Number(cambio.data.data.EUR)
- if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
 
 ///cambio
 const order = await prisma.ordersXREN.create({

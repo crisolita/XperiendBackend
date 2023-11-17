@@ -16,7 +16,7 @@ export const transporter = nodemailer.createTransport({
 });
 
 export async function sendAuthEmail(email: string, authCode: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails-user/Gestion User - Login con codigo de acceso.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails-user/Gestion User - Login con codigo de acceso.html", 'utf-8')
   const data={
     authCode,username
   }
@@ -29,7 +29,7 @@ export async function sendAuthEmail(email: string, authCode: string,username:str
   return transporter.sendMail(mailData);
 }
 export async function sendWelcomeEmailSinSubs(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails-user/Gestion User - Registro bienvenida sin suscripcion.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails-user/Gestion User - Registro bienvenida sin suscripcion.html", 'utf-8')
   const data={
     username
   }
@@ -56,7 +56,7 @@ export async function sendWelcomeEmailConSubs(email: string,username:string) {
 }
 
 export async function sendCompraTransferenciaEmailXREN(email: string,username:string,numeroDecuenta:string,banco:string,titular:string,concepto:string,euros:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails - Compra XREN/Compra XREN - Pendiente transferencia.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails - Compra XREN/Compra XREN - Pendiente transferencia.html", 'utf-8')
   const data={
     username,
     numeroDecuenta,
@@ -75,7 +75,7 @@ export async function sendCompraTransferenciaEmailXREN(email: string,username:st
 }
 
 export async function sendPagoCanceladoXREN(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails - Compra XREN/Compra XREN - Compra anulada.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails - Compra XREN/Compra XREN - Compra anulada.html", 'utf-8')
   const data={
     username
   }
@@ -89,7 +89,7 @@ export async function sendPagoCanceladoXREN(email: string,username:string) {
 }
 
 export async function sendPagoDevueltoXREN(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails - Compra XREN/Compra XREN - Compra anulada.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails - Compra XREN/Compra XREN - Compra anulada.html", 'utf-8')
   const data={
     username
   }
@@ -102,7 +102,7 @@ export async function sendPagoDevueltoXREN(email: string,username:string) {
   return transporter.sendMail(mailData);
 }
 export async function sendRecoverCode(email: string, authCode: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails-user/Gestion User - Reset password.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails-user/Gestion User - Reset password.html", 'utf-8')
   const data={
     username,
     authCode
@@ -116,7 +116,7 @@ export async function sendRecoverCode(email: string, authCode: string,username:s
 }
 
 export async function sendKycAprobado(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails - Gestion KYC/Gestion KYC - Aprobado.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails - Gestion KYC/Gestion KYC - Aprobado.html", 'utf-8')
   const data={
     username
   }
@@ -128,7 +128,7 @@ export async function sendKycAprobado(email: string,username:string) {
   return transporter.sendMail(mailData);
 }
 export async function sendKycRechazado(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails - Gestion KYC/Gestion KYC - Rechazado.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails - Gestion KYC/Gestion KYC - Rechazado.html", 'utf-8')
   const data={
     username
   }
@@ -167,7 +167,7 @@ export async function sendTransferenciaRecibidaParticipaciones(email: string,use
 }
 
 export async function sendWelcomeClub(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/emails - Compra XREN/Compra XREN - Compra acceso club.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/emails - Compra XREN/Compra XREN - Compra acceso club.html", 'utf-8')
   const data={
     username
   }
@@ -181,7 +181,7 @@ export async function sendWelcomeClub(email: string,username:string) {
 export async function sendTransferenciaPendienteParticipaciones(email: string,username:string, numeroDeCuenta:string,
   titular:string,
   concepto:string,euros:string,banco:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Venta/Venta INVESTHOME - Pendiente transferencia.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Venta/Venta INVESTHOME - Pendiente transferencia.html", 'utf-8')
   const data={
     username,
     numeroDeCuenta,
@@ -196,7 +196,7 @@ export async function sendTransferenciaPendienteParticipaciones(email: string,us
   return transporter.sendMail(mailData);
 }
 export async function compraRealizadaInvesthome(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Venta/Venta INVESTHOME - Compra Realizada.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Venta/Venta INVESTHOME - Compra Realizada.html", 'utf-8')
   const data={
   username
   }
@@ -210,7 +210,7 @@ export async function compraRealizadaInvesthome(email: string,username:string) {
 
 ///// VOOOY POR AQUI
 export async function compraAnuladaNoFirma(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Venta/Venta INVESTHOME - Compra anulada - No Firma.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Venta/Venta INVESTHOME - Compra anulada - No Firma.html", 'utf-8')
   const data={
   username
   }
@@ -222,7 +222,7 @@ export async function compraAnuladaNoFirma(email: string,username:string) {
   return transporter.sendMail(mailData);
 }
 export async function compraAnuladaNoPagado(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Venta/Venta INVESTHOME - Compra anulada - No transfer.htmll", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Venta/Venta INVESTHOME - Compra anulada - No transfer.htmll", 'utf-8')
   const data={
   username
   }
@@ -235,7 +235,7 @@ export async function compraAnuladaNoPagado(email: string,username:string) {
 }
 
 export async function intercambioAnuladoComprador(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio anulado- Comprador.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio anulado- Comprador.html", 'utf-8')
   const data={
   username
   }
@@ -248,7 +248,7 @@ export async function intercambioAnuladoComprador(email: string,username:string)
 }
 
 export async function intercambioAnuladoVendedor(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio anulado- Vendedor.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio anulado- Vendedor.html", 'utf-8')
   const data={
   username
   }
@@ -261,7 +261,7 @@ export async function intercambioAnuladoVendedor(email: string,username:string) 
 }
 
 export async function intercambioFirmeConfirmacion(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio Firme confirmacion - Vendedor.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio Firme confirmacion - Vendedor.html", 'utf-8')
   const data={
   username
   }
@@ -274,7 +274,7 @@ export async function intercambioFirmeConfirmacion(email: string,username:string
 }
 
 export async function intercambioPeticionComprador(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio peticion - Comprador.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio peticion - Comprador.html", 'utf-8')
   const data={
   username
   }
@@ -287,7 +287,7 @@ export async function intercambioPeticionComprador(email: string,username:string
 }
 
 export async function intercambioPeticionVendedor(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio peticion - Vendedor.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio peticion - Vendedor.html", 'utf-8')
   const data={
   username
   }
@@ -300,7 +300,7 @@ export async function intercambioPeticionVendedor(email: string,username:string)
 }
 
 export async function intercambioRealizadoComprador(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio realizado - Comprador.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio realizado - Comprador.html", 'utf-8')
   const data={
   username
   }
@@ -312,7 +312,7 @@ export async function intercambioRealizadoComprador(email: string,username:strin
   return transporter.sendMail(mailData);
 }
 export async function intercambioRealizadoVendedor(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio realizado - Vendedor.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio realizado - Vendedor.html", 'utf-8')
   const data={
   username
   }
@@ -327,7 +327,7 @@ export async function intercambioTransferenciaPendiente(email: string,username:s
   numeroDeCuenta:string,
   concepto:string,
   titular:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio transferencia pendiente- Comprador.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio transferencia pendiente- Comprador.html", 'utf-8')
   const data={
   username,
   banco,
@@ -343,7 +343,7 @@ export async function intercambioTransferenciaPendiente(email: string,username:s
   return transporter.sendMail(mailData);
 }
 export async function intercambioTransferenciaRecibida(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio Transferencia recibida- Comprador.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Intercambio/Gestion Intercambio - Intercambio Transferencia recibida- Comprador.html", 'utf-8')
   const data={
   username
   }
@@ -356,7 +356,7 @@ export async function intercambioTransferenciaRecibida(email: string,username:st
 }
 
 export async function reinversionRealizada(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto - Reinversion realizada.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto - Reinversion realizada.html", 'utf-8')
   const data={
   username
   }
@@ -370,7 +370,7 @@ export async function reinversionRealizada(email: string,username:string) {
 
 
 export async function reclamacionPeticion(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto- Reclamacion peticion.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto- Reclamacion peticion.html", 'utf-8')
   const data={
   username
   }
@@ -383,7 +383,7 @@ export async function reclamacionPeticion(email: string,username:string) {
 }
 
 export async function reclamacionRealizada(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto- Reclamacion realizada.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto- Reclamacion realizada.html", 'utf-8')
   const data={
   username
   }
@@ -395,7 +395,7 @@ export async function reclamacionRealizada(email: string,username:string) {
   return transporter.sendMail(mailData);
 }
 export async function reinversionPeticion(email: string,username:string) {
-  const plantilla=fs.readFileSync("/Users/crisolcova/XperiendBackend/emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto- Reinversion peticion.html", 'utf-8')
+  const plantilla=fs.readFileSync("emails/Gestion Investhome Fin proyecto/Gestion Fin proyecto- Reinversion peticion.html", 'utf-8')
   const data={
   username
   }

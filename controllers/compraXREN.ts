@@ -111,7 +111,6 @@ return res.status(200).json(order);
           let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
   
           amount=amount*Number(cambio.data.data.EUR)
-           if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
      
           const gestion= await getGestion(prisma)
           if(!gestion?.pagoCripto) return res.status(400).json({error:"No se permite pago con cripto"})

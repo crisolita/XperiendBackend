@@ -31,7 +31,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
 
       if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
         /// Cargo en stripe
-        const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,project.precio_unitario*100*cantidad.toString(),prisma)
+        const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,Math.ceil(project.precio_unitario*100*cantidad),prisma)
         if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
       
       const pago = await crearPago(USER.id,project.precio_unitario*cantidad,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion",prisma)
@@ -191,7 +191,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
     if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
       /// Cargo en stripe
-      const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,project.precio_unitario*100,prisma)
+      const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,Math.ceil(project.precio_unitario*100),prisma)
       if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
     
     const pago = await crearPago(USER.id,project.precio_unitario,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion a traves de intercambio",prisma)

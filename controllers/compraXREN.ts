@@ -25,14 +25,16 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
     const gestion= await getGestion(prisma)
     if(!gestion?.pagoTarjeta) return res.status(400).json({error:"No se permite pago con tarjeta"})
     const phase= await saleContract.functions.getcurrentPhase()
+  console.log(tokenAmount,ethers.utils.formatEther(phase[0].supply.toString()),"supply")
+  if(tokenAmount>Number(ethers.utils.formatEther(phase[0].supply.toString()))) return res.status(400).json({error:"No hay suficientes tokens en la fase"})
     let kyc= await getKycInfoByUser(USER.id, prisma)
 
     let amount=Number(ethers.utils.formatEther(phase[0].price))*100*tokenAmount
      let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
     
-     amount=amount*Number(cambio.data.data.EUR)
+     amount=Math.ceil(amount*Number(cambio.data.data.EUR))
       if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
-
+      console.log(amount,"amouuunt")
       // Cargo en stripe
         const charge= await createCharge(user.id,cardNumber,exp_month,exp_year,cvc,amount,prisma)
         if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
@@ -54,7 +56,6 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
       return res.status(200).json({pago,order});
     } catch ( error) {
       console.log(error)
-      await prisma.pagos.delete({where:{id:pago?.id}})
       res.status(500).json( error );
     }
   };
@@ -66,6 +67,7 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
 const USER= req.user as User;
 const {tokenAmount}= req.body;
 const phase= await saleContract.functions.getcurrentPhase()
+if(tokenAmount>Number(ethers.utils.formatEther(phase[0].supply.toString()))) return res.status(400).json({error:"No hay suficientes tokens en la fase"})
 
 const gestion= await getGestion(prisma)
 if(!gestion?.pagoTransferencia || !gestion.numero || !gestion.banco || !gestion.titular) return res.status(400).json({error:"No se permite pago con transferencia"})

@@ -43,6 +43,6 @@ router.put("/changeNewsletter",authenticateToken,changeNewsletter)
 
 router.put('/setFav',authenticateToken,setFavorite)
 router.get('/getFavs',authenticateToken,getFavorites)
-router.get('/canBuy',authenticateToken,userCanBuy)
+router.post('/canBuy',authenticateToken,userCanBuy)
 
 export default router;

@@ -323,7 +323,7 @@ export const userCanBuy = async (req: Request, res: Response) => {
     const prisma = req.prisma as PrismaClient;
      // @ts-ignore
      const USER = req.user as User;
-     const {project_id} = req.query;
+     const {project_id} = req.body;
     //  const user = await getUserById(USER.id, prisma);
     //  if(!user) return res.status(404).json({error:"Usuario no encontrado"})
     const kyc= await getKycInfoByUser(USER.id,prisma)

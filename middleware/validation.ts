@@ -90,13 +90,17 @@ export const querySchemaCreate_project = Joi.object({
       project_id:Joi.number().required(), 
         fecha_inicio_reinversion:Joi.date(),
         fecha_fin_reinversion:Joi.date(),
-        fecha_reclamo:Joi.date(),
+        fecha_inicio_reclamo:Joi.date(),
+        fecha_fin_reclamo:Joi.date(),
         fecha_fin_venta:Joi.date(),
         fecha_inicio_intercambio:Joi.date(),
         fecha_fin_intercambio:Joi.date(),
         visible_user:Joi.boolean(),
         visible_premium:Joi.boolean(),
-        visible_gold:Joi.boolean()
+        visible_gold:Joi.boolean(),
+        visible_intercambio:Joi.boolean(),
+        visible_reclamo:Joi.boolean(),
+        visible_reinversion:Joi.boolean()
     });
    
     export const querySchemaUpdateProjectCuentas = Joi.object({

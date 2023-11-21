@@ -178,9 +178,9 @@ export async function sendWelcomeClub(email: string,username:string) {
     html: mustache.render(plantilla,data)}
   return transporter.sendMail(mailData);
 }
-export async function sendTransferenciaPendienteParticipaciones(email: string,username:string, numeroDeCuenta:string,
+export async function sendTransferenciaPendienteParticipaciones(email: string,username:string, numeroDeCuenta:string,banco:string,
   titular:string,
-  concepto:string,euros:string,banco:string) {
+  concepto:string,euros:string) {
   const plantilla=fs.readFileSync("emails/Gestion Investhome Venta/Venta INVESTHOME - Pendiente transferencia.html", 'utf-8')
   const data={
     username,

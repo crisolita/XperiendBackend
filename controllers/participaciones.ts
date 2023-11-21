@@ -86,7 +86,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
   })
       await sendTransferenciaPendienteParticipaciones(USER.email,`${kycInfo.name} ${kycInfo.lastname}`,cuenta.numero,cuenta.banco,cuenta.titular,`${project.concepto_bancario}_${order.id}_${USER.id}`,(project.precio_unitario*cantidad).toString())
 
-      return res.status(200).json({order,concepto:project.concepto_bancario,numero:cuenta.numero,banco:cuenta.banco} );
+      return res.status(200).json({order,concepto:`${project.concepto_bancario}_${order.id}_${USER.id}`,numero:cuenta.numero,banco:cuenta.banco} );
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );

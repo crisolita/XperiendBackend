@@ -107,6 +107,7 @@ export const querySchemaCreate_project = Joi.object({
       project_id:Joi.number().required(), 
        numero:Joi.string(),
        banco:Joi.string(),
+       titular:Joi.string(),
        concepto_bancario:Joi.string()
     });
 

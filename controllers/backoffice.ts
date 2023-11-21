@@ -381,7 +381,7 @@ export const convertFullName = (str: string) =>
              } else {
               data= await prisma.templates.create({
                 data:{
-                id:template_id,
+              template_id:template_id,
                 project_id:project_id,
                 document_type
               }})
@@ -469,7 +469,7 @@ export const cambiarStatusDeTransferenciaParticipacion = async (req: Request, re
 
         if(!template) return res.status(404).json({error:"No template id encontrado"})
         
-      const docData= await crearDocumentoDeCompra(order.user_id,project.id,template.id,prisma)
+      const docData= await crearDocumentoDeCompra(order.user_id,project.id,template.template_id,prisma)
       if(!docData) return res.status(500).json({error:"Falla al crear documento"})
         
       const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR",cantidad:result},prisma)
@@ -485,7 +485,7 @@ export const cambiarStatusDeTransferenciaParticipacion = async (req: Request, re
 
               pago = await crearPago(order.user_id,project.precio_unitario,"TRANSFERENCIA_BANCARIA",new Date(fecha_recibido),"Compra de participacion por intercambio",prisma)
             
-              const docData= await crearDocumentoDeIntercambio(order.user_id,order.exchange_receiver,project.id,template.id,prisma)
+              const docData= await crearDocumentoDeIntercambio(order.user_id,order.exchange_receiver,project.id,template.template_id,prisma)
               if(!docData) return res.status(500).json({error:"Falla al crear documento"})
               const newOrder= await updateOrder(order.id,{document_id:docData.id,url_sign:docData.link,status:"POR_FIRMAR"},prisma)
               return res.status(200).json({pago,newOrder});

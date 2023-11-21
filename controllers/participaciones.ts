@@ -36,7 +36,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       
       const pago = await crearPago(USER.id,project.precio_unitario*cantidad,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion",prisma)
      
-      const docData= await crearDocumentoDeCompra(USER.id,project.id,template_id.id,prisma)
+      const docData= await crearDocumentoDeCompra(USER.id,project.id,template_id.template_id,prisma)
       if(!docData) return res.status(500).json({error:"Falla al crear documento"})
       const order= await prisma.orders.create({
         data:{
@@ -200,7 +200,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
       if(!template) return res.status(404).json({error:"Template no encotrado"})
   
-      const doc= await crearDocumentoDeIntercambio(order.user_id,USER.id,project.id,template.id,prisma)
+      const doc= await crearDocumentoDeIntercambio(order.user_id,USER.id,project.id,template.template_id,prisma)
       if(!doc) return res.status(500).json({error:"Error al crear el documento"})
       const newOrder= await updateOrder(order.id,{status:"POR_FIRMAR",url_sign:doc?.link,document_id:doc?.id,exchange_receiver:USER.id},prisma)
     res.json(newOrder)
@@ -259,7 +259,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"RECLAMACION"}})
     if(!template) return res.status(404).json({error:"Template no encotrado"})
 
-    const doc= await crearDocumentoReclamacion(USER.id,project.id,template.id,prisma)
+    const doc= await crearDocumentoReclamacion(USER.id,project.id,template.template_id,prisma)
 
     const order= await prisma.orders.create({data:{
       tipo:"RECLAMACION",
@@ -297,7 +297,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"REINVERSION"}})
     if(!template) return res.status(404).json({error:"Template no encotrado"})
 
-    const doc= await crearDocumentoReinversion(USER.id,project.id,template.id,prisma)
+    const doc= await crearDocumentoReinversion(USER.id,project.id,template.template_id,prisma)
     const order= await prisma.orders.create({data:{
       tipo:"REINVERSION",
       user_id:USER.id,

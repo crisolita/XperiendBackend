@@ -370,10 +370,9 @@ export const convertFullName = (str: string) =>
       let data;
           const isValid= await isValidTemplate(template_id)
           if(!isValid) return res.status(404).json({error:"Template no encontrado en PandaDoc"})
-          const isAlreadyID=await prisma.templates.findUnique({where:{id:template_id}})
           const isAlready= await prisma.templates.findFirst({where:{project_id,document_type}})
           const project= await getProjectById(project_id,prisma)
-          if( isAlreadyID || !project) return res.status(400).json({error:"Template ya guardado o proyecto no encontrado"})
+          if(!project) return res.status(400).json({error:"Proyecto no encontrado"})
              if( isAlready) {
               data=await prisma.templates.update({where:{id:isAlready.id},
                 data:{

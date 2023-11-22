@@ -218,7 +218,8 @@ export const querySchemaCreate_project = Joi.object({
         foto_dni_trasera:Joi.string().optional(),
         wallet:Joi.string().regex(/^0x[a-fA-F0-9]{40}$/).required(),
         estado_civil:Joi.string().required(),
-      regimen_matrimonial:Joi.string()
+      regimen_matrimonial:Joi.string(),
+      residencia_fiscal:Joi.string()
       });
       export const querySchemaCompraPartStripe= Joi.object({
         cantidad:Joi.number().required() ,cardNumber:Joi.string().min(13).required(),exp_month:Joi.string().required(),exp_year:Joi.string().required(),cvc:Joi.string().required().max(3),

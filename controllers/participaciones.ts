@@ -9,7 +9,7 @@ import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, crearDocumentoRec
 import { getKycInfoByUser, getUserById } from "../service/user";
 import fetch from "node-fetch";
 import { xperiendNFT } from "../service/web3";
-import { getDoc } from "../service/aws";
+import { getDoc, getImage } from "../service/aws";
 import { compraRealizadaInvesthome, intercambioTransferenciaPendiente, sendTransferenciaPendienteParticipaciones, sendWelcomeClub } from "../service/mail";
 export const compraParticipacionStripe = async (req: Request, res: Response) => {
     try {
@@ -116,7 +116,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const {document_id}= req.body
     let newOrder;
     const order= await prisma.orders.findFirst({where:{document_id,user_id:USER.id}})
-    if(!order) return res.status(404).json({error:"Orden no encontrada"})
+    if(!order || order.status=="PAGO_DEVUELTO") return res.status(404).json({error:"Orden no encontrada"})
     
     const signed= await isCompleted(document_id)
     if(!signed) return res.json({data:{document_signed:signed,order}})
@@ -333,7 +333,20 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       // @ts-ignore
       const prisma = req.prisma as PrismaClient;
       const orders= await prisma.orders.findMany()
-      res.json(orders)
+      let data =[]
+      let imageURL;
+      for (let order of orders) {
+        const imagePath= await prisma.projectImages.findFirst({where:{project_id:order.project_id,rol:"PRINCIPAL"}})
+        if(imagePath) { imageURL= await getImage(imagePath.path)}
+        const kyc= await getKycInfoByUser(order.user_id,prisma)
+        data.push({
+          order,
+          imageURL,
+          username:`${kyc?.name} ${kyc?.lastname}`
+
+        })
+      }
+      res.json(data)
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );

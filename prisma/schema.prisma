@@ -221,7 +221,7 @@ model OrdersXREN {
   tipo      Tipo
   user_id   Int
   status    StatusOrderXREN
-  unidades  Int
+  unidades  Float
   amountEUR Float
   hash      String?
   fecha     DateTime?

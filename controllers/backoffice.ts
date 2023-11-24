@@ -66,32 +66,40 @@ export const convertFullName = (str: string) =>
       const {project_id,images}=req.body;
       let project=await prisma.projects.findUnique({where:{id:project_id}})
       if(!project) return res.status(404).json({error:"NOT PROJECT FOUND"})
-
+      let data;
       for (let image of images) {
-        const path=`${project.titulo.replace(/\s/g, '_')}_${project_id}_${project.count_image? project.count_image+1 : 1}`
-        const exist = await prisma.projectImages.findUnique({where:{path}})
-        if(!exist) {
+        const data= Buffer.from(image.base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
+        if(image.rol=="PRINCIPAL" || image.rol=="NFT") {
+          const exist=await prisma.projectImages.findFirst({where:{project_id:project_id,rol:image.rol}})
+          if(exist) {
+          // // Utiliza fetch aquí dentro
+          await uploadImage(data,exist.path)
+          } else {
+            const path=`${project.titulo.replace(/\s/g, '_')}_${image.rol}_${project_id}_${project.count_image? project.count_image+1 : 1}`
+            await prisma.projectImages.create({data:{
+              project_id:project_id,
+              path:path,
+              rol:image.rol
+            }})
+            await uploadImage(data,path)
+          }
+        } else {
+          const path=`${project.titulo.replace(/\s/g, '_')}_${image.rol}_${project_id}_${project.count_image? project.count_image+1 : 1}`
           await prisma.projectImages.create({data:{
             project_id:project_id,
             path:path,
             rol:image.rol
           }})
+          await uploadImage(data,path)
         }
-         // // Utiliza fetch aquí dentro
-         const data= Buffer.from(image.base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''),'base64')
-  
-         await uploadImage(data,path)
         project=await prisma.projects.update({
           where:{id:project_id},
           data:{
           count_image:project.count_image? project.count_image+1:1}
         })
-
-
       }
-      return res.json({data:"Imagenes subidas con exito"})
+      return res.json({data:"Imagen subida con exito"})
     } catch(e) {
-
       console.log(e)
       return res.status(500).json({error:e})
       }  

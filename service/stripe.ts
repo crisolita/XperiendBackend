@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { getUserById } from "./user";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.ENV="TEST"?process.env.SK_TEST?process.env.SK_TEST:"":process.env.SK_LIVE?process.env.SK_LIVE:"",{
+const stripe = new  Stripe(process.env.SK_LIVE?process.env.SK_LIVE:"",{
   apiVersion: '2023-08-16',
 });
 
@@ -12,22 +12,23 @@ const stripe = new Stripe(process.env.ENV="TEST"?process.env.SK_TEST?process.env
       const user= await getUserById(user_id,prisma)
       const customer = await stripe.customers.create({description:`${user_id}`
       , email:user?.email})
-      // const paymentMethod = await stripe.paymentMethods.create({   
-      //   card: {
-      //       number: cardNumber,
-      //       exp_month: exp_month,
-      //       exp_year: exp_year,
-      //       cvc: cvc
-      //     },
-      //   });
-        // const attach= await stripe.paymentMethods.attach(
-        //   paymentMethod.id,
-        //   {customer: customer.id}
-        // );
+      const paymentMethod = await stripe.paymentMethods.create({   
+        type:'card',
+        card: {
+            number: cardNumber,
+            exp_month: exp_month,
+            exp_year: exp_year,
+            cvc: cvc
+          },
+        } as any);
+        const attach= await stripe.paymentMethods.attach(
+          paymentMethod.id,
+          {customer: customer.id}
+        );
         const charge = await stripe.paymentIntents.create({
           amount: amount,
           currency: 'eur',
-          payment_method:'pm_card_visa',
+          payment_method:paymentMethod.id,
           confirm:true,
           customer:customer.id,
           receipt_email:user?.email,

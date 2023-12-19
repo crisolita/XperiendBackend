@@ -2,12 +2,11 @@ import { PrismaClient, User } from "@prisma/client";
 import { Request, Response, response } from "express";
 import { getProjectById } from "../service/backoffice";
 import moment from "moment";
-import { createCharge } from "../service/stripe";
+import { createCheckoutSession, validateCheckout } from "../service/stripe";
 import { getCuentaById,  getFechaDeVentaInicial,  getGestionByProjectId, getOrderById, getTipoDeUsuario, getTotalBalanceStake, getTotalBalanceVenta, updateOrder } from "../service/participaciones";
 import { crearPago } from "../service/pagos";
 import {  crearDocumentoDeCompra, crearDocumentoDeIntercambio, crearDocumentoReclamacion, crearDocumentoReinversion, isCompleted } from "../service/pandadoc";
 import { getKycInfoByUser, getUserById } from "../service/user";
-import fetch from "node-fetch";
 import { xperiendNFT } from "../service/web3";
 import { getDoc, getImage } from "../service/aws";
 import { compraRealizadaInvesthome, intercambioTransferenciaPendiente, sendTransferenciaPendienteParticipaciones, sendWelcomeClub } from "../service/mail";
@@ -17,7 +16,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const prisma = req.prisma as PrismaClient;
            // @ts-ignore
     const USER= req.user as User;
-      const {project_id,cardNumber,exp_month,exp_year,cvc,cantidad}= req.body;
+      const {project_id,cantidad}= req.body;
       const project=await getProjectById(project_id,prisma)
       const gestion= await getGestionByProjectId(project_id,prisma)
       const kycInfo= await getKycInfoByUser(USER.id,prisma)
@@ -28,30 +27,23 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       if(project.cantidadRestante<cantidad) return res.status(400).json({error:"No hay suficientes participaciones a comprar"})
       const fecha_abierto_por_usuario= await getFechaDeVentaInicial(kycInfo.wallet,project?.id,prisma)
       const now= moment()
-
+      console.log(fecha_abierto_por_usuario,gestion.fecha_fin_venta)
       if(!now.isBetween(moment(fecha_abierto_por_usuario),moment(gestion.fecha_fin_venta)) || project.estado!=="ABIERTO") return res.status(400).json({error:"No esta en la etapa de compra a Xperiend"})
-        /// Cargo en stripe
-        const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,Math.ceil(project.precio_unitario*100*cantidad),prisma)
-        if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
       
-      const pago = await crearPago(USER.id,project.precio_unitario*cantidad,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion",prisma)
-     
-      const docData= await crearDocumentoDeCompra(USER.id,project.id,template_id.template_id,prisma)
-      if(!docData) return res.status(500).json({error:"Falla al crear documento"})
       const order= await prisma.orders.create({
         data:{
         tipo:"COMPRA",
         user_id:USER.id,
         project_id:project.id,
         cantidad:cantidad,
-        document_id:docData.id,
-        url_sign:docData.link,
         fecha:new Date(),
-        status:"POR_FIRMAR"
+        status:"PAGO_PENDIENTE"
         }
     })
-     await compraRealizadaInvesthome(USER.email,`${kycInfo.name} ${kycInfo.lastname}`)
-      return res.status(200).json({pago,order} );
+    const charge= await createCheckoutSession((cantidad*project.precio_unitario*100).toString(),order.id,"participacion")
+    if(!charge) return res.status(400).json({error:"Error creando el link de pago"})
+    await prisma.orders.update({where:{id:order.id},data:{checkout_id:charge.id}})
+      return res.status(200).json({paymentLink:charge.url,order} );
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -160,8 +152,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       tipo:"INTERCAMBIO",
       user_id:USER.id,
       project_id:exchange.project_id,
-      status:"POR_INTERCAMBIAR",
-      cantidad:1,
+      status:"POR_INTERCAMBIAR",      cantidad:1,
       nft_id:nftId,
     }})
     res.json(order)
@@ -177,7 +168,7 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
       const prisma = req.prisma as PrismaClient;
     //        // @ts-ignore
     const USER= req.user as User;
-    const {orderId,cvc,exp_month,exp_year,cardNumber}= req.body;
+    const {orderId}= req.body;
     const order= await getOrderById(orderId,prisma)
     if(!order) return res.status(404).json({error:"Orden no encotrada"})
     const exchange= await xperiendNFT.getExchange(order.nft_id)
@@ -191,18 +182,65 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
     const tipoDeUsuario= await getTipoDeUsuario(kyc?.wallet,project.id,prisma)
     if(!tipoDeUsuario) return res.status(403).json({error:"Usuario no cumple con los requisitos para comprar"})
       /// Cargo en stripe
-      const charge= await createCharge(USER.id,cardNumber,exp_month,exp_year,cvc,Math.ceil(project.precio_unitario*100),prisma)
+      const charge= await createCheckoutSession(Math.ceil(project.precio_unitario*100).toString(),order.id,"INTERCAMBIO")
       if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
     
-    const pago = await crearPago(USER.id,project.precio_unitario,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion a traves de intercambio",prisma)
    
-      /// Generar o buscar el documento y enviarselo al nuevo usuario para que lo firme
-      const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
-      if(!template) return res.status(404).json({error:"Template no encotrado"})
+      const newOrder= await updateOrder(order.id,{status:"PAGO_PENDIENTE",checkout_id:charge.id,exchange_receiver:USER.id},prisma)
+    res.json(newOrder)
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const confirmIntercambioStripe = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {orderId}= req.body;
+    const order= await getOrderById(orderId,prisma)
+    if(!order) return res.status(404).json({error:"Orden no encotrada"})
+    const exchange= await xperiendNFT.getExchange(order.nft_id)
+    const project= await getProjectById(exchange.projectId.toString(),prisma)
+    if(!project || project.estado!="EN_PROCESO" || exchange.status!=1  || !project.precio_unitario ) return res.status(400).json({error:"Proyecto no encontrado o terminado"})
+    if(order.exchange_receiver!=USER.id || order.status!="PAGO_PENDIENTE"|| !order.checkout_id ) return res.status(404).json({error:"Orden no disponible"})
+      const kyc= await getKycInfoByUser(USER.id,prisma)
+    if(!kyc?.wallet) return res.status(404).json({error:"Wallet del comprador no encontrada"})
+
+    const paid= await validateCheckout(order.checkout_id)
+    if(paid.payment_status=="paid") {
+      const pago = await crearPago(USER.id,project.precio_unitario*order.cantidad,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion a traves de intercambio",prisma)
+       /// Generar o buscar el documento y enviarselo al nuevo usuario para que lo firme
+       const template= await prisma.templates.findFirst({where:{project_id:project.id,document_type:"INTERCAMBIO"}})
+       if(!template) return res.status(404).json({error:"Template no encotrado"})
+   
+       const doc= await crearDocumentoDeIntercambio(order.user_id,USER.id,project.id,template.template_id,prisma)
+       if(!doc) return res.status(500).json({error:"Error al crear el documento"})
+       const newOrder= await updateOrder(order.id,{status:"POR_FIRMAR",url_sign:doc?.link,document_id:doc?.id},prisma)
+     res.json(newOrder)
+    } else return res.status(400).json({error:"Pago no ha sido completado"})
+   
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const cancelIntercambioStripe = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER= req.user as User;
+    const {orderId,}= req.body;
+    const order= await getOrderById(orderId,prisma)
+    if(!order) return res.status(404).json({error:"Orden no encotrada"})
+    const exchange= await xperiendNFT.getExchange(order.nft_id)
+    const project= await getProjectById(exchange.projectId.toString(),prisma)
+    if(order.status!="PAGO_PENDIENTE") return res.status(400).json({error:"Pago no esta pendiente"})
   
-      const doc= await crearDocumentoDeIntercambio(order.user_id,USER.id,project.id,template.template_id,prisma)
-      if(!doc) return res.status(500).json({error:"Error al crear el documento"})
-      const newOrder= await updateOrder(order.id,{status:"POR_FIRMAR",url_sign:doc?.link,document_id:doc?.id,exchange_receiver:USER.id},prisma)
+      const newOrder= await updateOrder(order.id,{status:"POR_INTERCAMBIAR",checkout_id:undefined,exchange_receiver:undefined},prisma)
     res.json(newOrder)
     } catch ( error) {
       console.log(error)
@@ -427,7 +465,64 @@ export const compraParticipacionStripe = async (req: Request, res: Response) => 
   };
   
   
-  
+  export const confirmCompraParticipacionStripe = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+           // @ts-ignore
+    const USER= req.user as User;
+      const {orderId}= req.body;
+      let order=await getOrderById(orderId,prisma)
+      const kycInfo= await getKycInfoByUser(USER.id,prisma)
+      console.log(order)
+      if(!order || !order.checkout_id || !kycInfo?.wallet || order.status!="PAGO_PENDIENTE" || order.user_id!=USER.id ) return res.status(404).json({error:"Orden no encontrada o no activa para validar pago"})
+      const project= await getProjectById(order.project_id,prisma)
+   
+        /// Confirm
+        const paid= await validateCheckout(order.checkout_id)
+        if(paid.payment_status=="paid") {
+      if(project?.precio_unitario) {
+        const pago = await crearPago(USER.id,order.cantidad*project?.precio_unitario,"TARJETA_DE_CREDITO",new Date(),"Compra de participacion",prisma)
+        const template_id=await prisma.templates.findFirst({where:{project_id:project.id,document_type:"COMPRA"}})
+        if(!template_id) return res.status(404).json({error:"No template id encontrado"})
+        const docData= await crearDocumentoDeCompra(USER.id,project.id,template_id.template_id,prisma)
+        if(!docData) return res.status(500).json({error:"Falla al crear documento"})
+         order= await prisma.orders.update({ where:{id:orderId},
+          data:{
+          document_id:docData.id,
+          url_sign:docData.link,
+          fecha:new Date(),
+          status:"POR_FIRMAR"
+          }
+      })
+       await compraRealizadaInvesthome(USER.email,`${kycInfo.name} ${kycInfo.lastname}`)
+        return res.status(200).json({pago,order} );
+      }
+    } else return res.status(400).json({error:"No hay pago"})
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
+  export const cancelCompraParticipacionStripe = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+           // @ts-ignore
+    const USER= req.user as User;
+      const {orderId}= req.body;
+      let order=await getOrderById(orderId,prisma)
+      if(!order || !order.checkout_id || order.status!="PAGO_PENDIENTE" || order.user_id!=USER.id ) return res.status(404).json({error:"Orden no encontrada o no activa para validar pago"})
+       
+         order= await prisma.orders.delete({ where:{id:orderId}
+      })
+        return res.status(200).json(order );
+
+    } catch ( error) {
+      console.log(error)
+      res.status(500).json( error );
+    }
+  };
   
   
   

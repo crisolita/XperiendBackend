@@ -20,6 +20,8 @@ import { getProjectById } from "../service/backoffice";
 import { getImage } from "../service/aws";
 import { getFechaDeVentaInicial } from "../service/participaciones";
 import moment from "moment";
+import { number } from "joi";
+import { xperiendNFT } from "../service/web3";
 const client = new OAuth2Client({
   clientId: process.env.CLIENT_ID_GOOGLE,
   clientSecret: process.env.CLIENT_SECRET_GOOGLE,
@@ -242,8 +244,22 @@ export const getUserInfo = async (req: Request, res: Response) => {
         favs.push(project)
       }
     }
+    const orders= await prisma.orders.findMany({where:{status:"PAGADO_Y_ENTREGADO_Y_FIRMADO"}})
+    let proyectos: number[]=[];
+    for (let order of orders) {
+      if(proyectos.includes(order.project_id)) continue
+      if(order.user_id==USER.id && order.tipo=='INTERCAMBIO') continue
+      proyectos.push(order.project_id)
+    }
     const kycInfo=await getKycInfoByUser(USER.id,prisma)
-    return res.json({user_id:USER.id,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter,favs,motivo_rechazo_kyc:user?.motivo_rechazo_kyc,kycInfo:kycInfo?.status=="RECHAZADO"? kycInfo :null})
+    let images=[]
+    if (kycInfo?.status=="RECHAZADO") {
+      const kyc_images= await prisma.kycImages.findMany({where:{info_id:kycInfo.id}})
+      for (let image of kyc_images) {
+        images.push(await getImage(image.path))
+      }
+    }
+    return res.json({user_id:USER.id,email:user?.email,referallFriend:user?.referallFriend,userName:user?.userName,googleId:user?.googleID,kycStatus:user?.kycStatus,rol:user?.userRol,newsletter:user?.newsletter,favs,motivo_rechazo_kyc:user?.motivo_rechazo_kyc,kycInfo:kycInfo?.status=="RECHAZADO"? kycInfo :null,kycImages:kycInfo?.status=="RECHAZADO"? images : null,proyectosInvertidos:proyectos})
   } catch(error) {
     console.log(error)
     return res.status(500).json({ error: error });

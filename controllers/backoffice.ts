@@ -566,7 +566,7 @@ export const getAllProjectsToAdmin= async(req:Request,res:Response) => {
     const projects= await prisma.projects.findMany()
     const users= await getAllUsers(prisma)
     for( let project of projects) {
-      const orders= await prisma.orders.findMany({where:{id:project.id,tipo:"COMPRA",status:"PAGADO_Y_ENTREGADO_Y_FIRMADO"}})
+      const orders= await prisma.orders.findMany({where:{id:project.id,status:"PAGADO_Y_ENTREGADO_Y_FIRMADO"}})
       escenario= await prisma.escenario_economico.findMany({where:{project_id:project.id}})
       fechas= await prisma.gestion_fechas.findMany({where:{project_id:project.id}})
       if (project.cuenta_id){

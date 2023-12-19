@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken } from "../middleware/auth";
-import { compraXRENCripto, compraXRENStripe, compraXRENTransferenciaBancaria, ordersXREN, ordersXRENByUser } from "../controllers/compraXREN";
+import { cancelBuyXREN, compraXRENCripto, compraXRENStripe, compraXRENTransferenciaBancaria, confirmBuyXREN, ordersXREN, ordersXRENByUser } from "../controllers/compraXREN";
 import { isAdmin } from "../middleware/isAdmin";
 import Joivalidator from "express-joi-validation";
 import { querySchemaCompraXRENCripto, querySchemaCompraXRENStripe, querySchemaCompraXRENTransferencia } from "../middleware/validation";
@@ -16,6 +16,8 @@ router.post("/transferencia",validator.body(querySchemaCompraXRENTransferencia),
 router.post("/cripto", validator.body(querySchemaCompraXRENCripto),authenticateToken,compraXRENCripto);
 
 router.post("/stripe", validator.body(querySchemaCompraXRENStripe),isKycRequired,compraXRENStripe);
+router.post("/confirmStripe", isKycRequired,confirmBuyXREN);
+router.post("/cancelStripe",isKycRequired,cancelBuyXREN);
 
 router.get('/orders',isAdmin,ordersXREN)
 router.get('/gestionXREN',getGestionVentaXREN)

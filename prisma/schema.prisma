@@ -211,6 +211,7 @@ model Orders {
   cantidad          Int
   url_sign          String?
   exchange_receiver Int?
+  checkout_id String?
   nft               NFT?             @relation(fields: [nft_id], references: [id])
   project           Projects?        @relation(fields: [project_id], references: [id])
   user              User             @relation(fields: [user_id], references: [id])
@@ -225,6 +226,7 @@ model OrdersXREN {
   amountEUR Float
   hash      String?
   fecha     DateTime?
+  checkout_id String?
   user      User            @relation(fields: [user_id], references: [id])
 }
 

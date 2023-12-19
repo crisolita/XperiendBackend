@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken } from "../middleware/auth";
-import { allPagos, compraParticipacionStripe, compraParticipacionTransferenciaBancaria, createIntercambio, documentosToUser, orders, ordersByUser, pagosByUser, prueba, signedDocument  } from "../controllers/participaciones";
+import { allPagos, cancelCompraParticipacionStripe, compraParticipacionStripe, compraParticipacionTransferenciaBancaria, confirmCompraParticipacionStripe, createIntercambio, documentosToUser, orders, ordersByUser, pagosByUser, prueba, signedDocument  } from "../controllers/participaciones";
 import { isKycRequired } from "../middleware/kycRequired";
 import { isAdmin } from "../middleware/isAdmin";
 
@@ -9,6 +9,8 @@ const router = express.Router();
 //NFTs?
 router.post("/compra-participacion-transferencia", isKycRequired, compraParticipacionTransferenciaBancaria);
 router.post("/compra-participacion-stripe", isKycRequired, compraParticipacionStripe);
+router.post("/confirmar-compra-stripe", isKycRequired, confirmCompraParticipacionStripe);
+router.post("/cancelar-compra-stripe", isKycRequired, cancelCompraParticipacionStripe);
 
 router.get("/prueba",prueba)
 router.post("/createExchange",createIntercambio)

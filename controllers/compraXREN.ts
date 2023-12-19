@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { getKycInfoByUser, getUserById } from "../service/user";
 import { saleContract } from "../service/web3";
 import {ethers} from 'ethers'
-import { createCharge } from "../service/stripe";
+import { createCheckoutSession, validateCheckout } from "../service/stripe";
 import { crearPago } from "../service/pagos";
 import { getGestion } from "../service/backoffice";
 import { sendCompraTransferenciaEmailXREN, sendWelcomeClub } from "../service/mail";
@@ -13,11 +13,10 @@ const APIKEYRATES="fca_live_cLgxgrhTJuHjvNc5DQSDiiC9ElM4qcrPs2TmZrq5"
 export const compraXRENStripe = async (req: Request, res: Response) => {
   // @ts-ignore
   const prisma = req.prisma as PrismaClient;
-  let pago;
     try {
            // @ts-ignore
     const USER= req.user as User;
-    const {tokenAmount,cardNumber,exp_month,exp_year,cvc}= req.body;
+    const {tokenAmount}= req.body;
     const user = await getUserById(USER.id, prisma)
     if(!user) return res.status(404).json({error:"User no econtrado"})
     const wallet= (await getKycInfoByUser(user.id,prisma))?.wallet
@@ -25,35 +24,29 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
     const gestion= await getGestion(prisma)
     if(!gestion?.pagoTarjeta) return res.status(400).json({error:"No se permite pago con tarjeta"})
     const phase= await saleContract.functions.getcurrentPhase()
-  console.log(tokenAmount,ethers.utils.formatEther(phase[0].supply.toString()),"supply")
-  if(tokenAmount>Number(ethers.utils.formatEther(phase[0].supply.toString()))) return res.status(400).json({error:"No hay suficientes tokens en la fase"})
-    let kyc= await getKycInfoByUser(USER.id, prisma)
+    if(tokenAmount>Number(ethers.utils.formatEther(phase[0].supply.toString()))) return res.status(400).json({error:"No hay suficientes tokens en la fase"})
 
-    let amount=Number(ethers.utils.formatEther(phase[0].price))*100*tokenAmount
+    let amount=Number(ethers.utils.formatEther(phase[0].price))*tokenAmount
      let cambio=await axios.get(`https://api.freecurrencyapi.com/v1/latest?apikey=${APIKEYRATES}&base_currency=USD&currencies=EUR`)
     
      amount=Math.ceil(amount*Number(cambio.data.data.EUR))
-      if(amount<100)  return res.status(404).json({error:"Monto debe ser mayor"})
-      console.log(amount,"amouuunt")
-      // Cargo en stripe
-        const charge= await createCharge(user.id,cardNumber,exp_month,exp_year,cvc,amount,prisma)
-        if(!charge) return res.status(400).json({error:"Cargo tarjeta de credito ha fallado"})
-      
-       pago = await crearPago(USER.id,Number(ethers.utils.formatEther(phase[0].price))*tokenAmount,"TARJETA_DE_CREDITO",new Date(),`Compra de ${tokenAmount} XREN`,prisma)
-      const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(tokenAmount.toString()),wallet)
-      const order = await prisma.ordersXREN.create({
+      if((amount*100)<100)  return res.status(404).json({error:"Monto debe ser mayor"})
+    
+      let order = await prisma.ordersXREN.create({
         data:{
           tipo:"COMPRA",
           user_id:USER.id,
-          status:"PAGO_EXITOSO_ENTREGADO",
-          amountEUR:amount/100,
+          status:"PAGO_PENDIENTE",
+          amountEUR:amount,
           unidades:tokenAmount,
-          hash:mint.hash,
           fecha:new Date()
         }
       })
-      await sendWelcomeClub(user.email,`${kyc?.name} ${kyc?.lastname}`)      
-      return res.status(200).json({pago,order});
+        // Cargo en stripe
+        const charge= await createCheckoutSession((amount*100).toString(),order.id,"XREN")
+        if(!charge) return res.status(400).json({error:"Creacion link de pago ha fallado"})
+        order=await prisma.ordersXREN.update({where:{id:order.id},data:{checkout_id:charge.id}})
+      return res.status(200).json({order,paymentLink:charge.url});
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
@@ -157,5 +150,69 @@ return res.status(200).json(order);
     } catch ( error) {
       console.log(error)
       res.status(500).json( error );
+    }
+  };
+
+  export const confirmBuyXREN = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+       // @ts-ignore
+       const USER = req.user as User;
+      const {orderId} = req.body;
+      let order = await prisma.ordersXREN.findUnique({where:{id:orderId}})
+      const buyer= await getUserById(USER.id,prisma)
+      if(!order) return res.status(404).json({error:"Orden no encontrada"})
+      if( order.status!="PAGO_PENDIENTE"|| buyer?.id!=order.user_id ) return res.status(400).json({error:"Order esta completa"})
+      let pago;
+    const kyc= await getKycInfoByUser(USER.id,prisma)
+
+      /// Validar pago de stripe
+  //retrieve the payment
+  if(order.checkout_id && kyc?.wallet) {
+    const paid= await validateCheckout(order.checkout_id)
+    if(paid.payment_status=="paid") {
+      pago = await crearPago(USER.id,order.amountEUR,"TARJETA_DE_CREDITO",new Date(),`Compra de ${order.unidades} XREN`,prisma)
+      const mint= await saleContract.functions.addUsersToVesting(ethers.utils.parseEther(order.unidades.toString()),kyc.wallet)
+          order=await prisma.ordersXREN.update({
+            where: { id: Number(order.id) },
+            data: {
+              status:'PAGO_EXITOSO_ENTREGADO',
+              hash:mint.hash,
+              fecha:new Date()
+            },
+          })
+
+          return res.json(order)
+    }
+  } else return res.status(404).json({error:"No hay pago abierto"})
+    } catch (error) {
+      console.log(error)
+      res.json({ error:error});
+    }
+  };
+  export const cancelBuyXREN = async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const prisma = req.prisma as PrismaClient;
+       // @ts-ignore
+       const USER = req.user as User;
+      const {orderId,hola} = req?.body;
+      console.log(orderId,hola)
+      let order = await prisma.ordersXREN.findUnique({where:{id:orderId}})
+      const buyer= await getUserById(USER.id,prisma)
+      if(!order) return res.status(404).json({error:"Orden no encontrada"})
+      if(  order.status!="PAGO_PENDIENTE"|| buyer?.id!=order.user_id ) return res.status(400).json({error:"Order esta completa"})
+  
+          order=await prisma.ordersXREN.delete({
+            where: { id: Number(order.id) }
+          
+          })
+
+          return res.json(order)
+
+    } catch (error) {
+      console.log(error)
+      res.json({ error:error});
     }
   };

@@ -10,7 +10,7 @@ export const querySchemaRegistro = Joi.object({
     .required().messages({'string.default':"El email debe ser valido",'string.required': `Email es requerido`,'string.email':"Debe ser un email valido"}),
     referallUser: Joi.string().min(6).optional(),
     userName: Joi.string().min(6).optional(),
-    newsletter:Joi.boolean().optional()
+    newsletter:Joi.boolean().optional(),
 });
 export const querySchemaUGetAuth = Joi.object({
   password: Joi.string().required().pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?])[A-Za-z0-9`~!@#$%^&*()\-_=+[{\]}|\\;:'",<.>\/?]{8,}$/)).messages({  'string.base': `Contraseña debe ser de tipo texto`,
@@ -194,7 +194,7 @@ export const querySchemaCreate_project = Joi.object({
         hash:Joi.string()
         });
       export const querySchemaCompraXRENStripe= Joi.object({
-          tokenAmount:Joi.number().required(),cardNumber:Joi.string().min(13).required(),exp_month:Joi.string().required(),exp_year:Joi.string().required(),cvc:Joi.string().required().max(3),
+          tokenAmount:Joi.number().required(),
           });
       export const querySchemaSubmitKyc= Joi.object({
         name:Joi.string().required(),
@@ -222,7 +222,10 @@ export const querySchemaCreate_project = Joi.object({
       residencia_fiscal:Joi.string()
       });
       export const querySchemaCompraPartStripe= Joi.object({
-        cantidad:Joi.number().required() ,cardNumber:Joi.string().min(13).required(),exp_month:Joi.string().required(),exp_year:Joi.string().required(),cvc:Joi.string().required().max(3),
+        cantidad:Joi.number().required(),project_id:Joi.number().required()
+        });
+        export const querySchemaConfirmYCancel= Joi.object({
+          orderId:Joi.number().required()
         });
         export const querySchemaCompraPartTransf= Joi.object({
           project_id:Joi.number().required(),

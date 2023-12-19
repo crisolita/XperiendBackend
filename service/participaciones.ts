@@ -49,6 +49,7 @@ export const updateOrder = async (
     nft_id?:number,
     cantidad?:number,
      url_sign?:string,
+     checkout_id?:string,
      exchange_receiver?:number
    },
   prisma: PrismaClient

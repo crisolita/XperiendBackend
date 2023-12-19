@@ -1,45 +1,56 @@
-import { PrismaClient } from "@prisma/client";
-import { getUserById } from "./user";
-import Stripe from "stripe";
 
-const stripe = new  Stripe(process.env.SK_LIVE?process.env.SK_LIVE:"",{
-  apiVersion: '2023-08-16',
-});
+const stripe = require('stripe')(process.env.SK_TEST);
 
 
-  export const createCharge = async (user_id:number,cardNumber:string, exp_month:string,exp_year:string,cvc:string, amount:number,prisma: PrismaClient) => {
-    try {
-      const user= await getUserById(user_id,prisma)
-      const customer = await stripe.customers.create({description:`${user_id}`
-      , email:user?.email})
-      const paymentMethod = await stripe.paymentMethods.create({   
-        type:'card',
-        card: {
-            number: cardNumber,
-            exp_month: exp_month,
-            exp_year: exp_year,
-            cvc: cvc
-          },
-        } as any);
-        const attach= await stripe.paymentMethods.attach(
-          paymentMethod.id,
-          {customer: customer.id}
-        );
-        const charge = await stripe.paymentIntents.create({
-          amount: amount,
-          currency: 'eur',
-          payment_method:paymentMethod.id,
-          confirm:true,
-          customer:customer.id,
-          receipt_email:user?.email,
-          return_url:`https://localhost:3001`
-        })
-        // const balance = await stripe.balance.retrieve();
-        // console.log(balance,"un balance que debria estar bueno")
-        return true;
-    } catch(e) {
-      console.log(e)
-      return false
-    }
-   
-    };
+    export const createCheckoutSession = async ( amount:string,orderId:number,orderType:string) => {
+      try {
+
+          const price = await stripe.prices.create({
+            currency: 'eur',
+            unit_amount: amount,
+            product_data: {
+              name: `Compra de ${orderType}`,
+            },
+          });
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types:['card'],
+
+          line_items: [
+            {
+              price: price.id,
+              quantity: 1,
+            },
+          ], 
+          success_url: `https://xperiend.com/stripe/${orderType}/success/${orderId}`,
+          cancel_url: `https://xperiend.com/stripe//${orderType}/cancel/${orderId}`,
+        });
+        return session
+      } catch(e) {
+        console.log(e)
+        return false
+      }
+     
+      };
+
+      export const validateCheckout = async (checkout_id:string) => {
+        try {
+          const session = await stripe.checkout.sessions.retrieve(checkout_id)
+          return session
+        } catch(e) {
+          console.log(e)
+          return false
+        }
+       
+        };
+
+      export const getBalance = async (acctStpId:string) => {
+        try {
+          const balance = await stripe.balance.retrieve(acctStpId)
+          return balance
+        } catch(e) {
+          console.log(e)
+          return false
+        }
+       
+        };

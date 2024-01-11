@@ -207,6 +207,7 @@ model Orders {
   status            EstadoPagoYFirma
   document_id       String?
   fecha             DateTime?
+  fecha_devolucion DateTime?
   nft_id            Int?
   cantidad          Int
   url_sign          String?

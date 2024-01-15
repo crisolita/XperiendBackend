@@ -33,7 +33,7 @@ export const isCompleted = async (documentId: string) => {
   });
   if (response.status === "document.completed") {
     return true;
-  }
+  } else return false;
 };
 
 export const crearDocumentoDeCompra = async (

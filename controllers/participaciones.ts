@@ -90,6 +90,7 @@ export const compraParticipacionStripe = async (
         project_id: project.id,
         cantidad: cantidad,
         fecha: new Date(),
+        metodo_de_pago: "TARJETA_DE_CREDITO",
         status: "PAGO_PENDIENTE",
       },
     });
@@ -165,6 +166,7 @@ export const compraParticipacionTransferenciaBancaria = async (
         user_id: USER.id,
         cantidad: cantidad,
         project_id: project.id,
+        metodo_de_pago: "TRANSFERENCIA_BANCARIA",
         status: "PAGO_PENDIENTE",
         fecha: new Date(),
       },
@@ -217,14 +219,17 @@ export const signedDocument = async (req: Request, res: Response) => {
     // @ts-ignore
     const USER = req.user as User;
     const { document_id } = req.body;
-    let newOrder;
+    let newOrder, nft;
+    const kyc = await getKycInfoByUser(USER.id, prisma);
     const order = await prisma.orders.findFirst({
       where: { document_id, user_id: USER.id },
     });
     if (!order || order.status == "PAGO_DEVUELTO")
       return res.status(404).json({ error: "Orden no encontrada" });
-
+    console.log("llegue aqui antes de firmar");
     const signed = await isCompleted(document_id);
+    console.log("llegue aqui despues de firmar");
+
     if (!signed) return res.json({ data: { document_signed: signed, order } });
     newOrder = await updateOrder(
       order.id,
@@ -235,6 +240,29 @@ export const signedDocument = async (req: Request, res: Response) => {
     switch (order.tipo) {
       case "COMPRA":
         ///MINTEAR UN NFT?
+        console.log("Voy a mintear");
+        const mint = await xperiendNFT.functions.safeMint(
+          kyc?.wallet,
+          "tokenhash",
+          document_id,
+          order.project_id
+        );
+        const id = await xperiendNFT.functions.id();
+        nft = await prisma.nFT.create({
+          data: {
+            id: id,
+            txHash: mint.hash,
+            project_id: order.project_id,
+          },
+        });
+        console.log("mintear", mint);
+
+        console.log(id);
+        newOrder = await updateOrder(
+          order.id,
+          { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO", nft_id: id },
+          prisma
+        );
         break;
       case "RECLAMACION":
         break;
@@ -244,7 +272,7 @@ export const signedDocument = async (req: Request, res: Response) => {
         break;
     }
 
-    res.json(newOrder);
+    res.json({ newOrder, nft });
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -665,9 +693,33 @@ export const ordersByUser = async (req: Request, res: Response) => {
     const prisma = req.prisma as PrismaClient;
     // @ts-ignore
     const USER = req.user as User;
-    const orders = await prisma.orders.findMany({
+    const allOrders = await prisma.orders.findMany({
       where: { user_id: USER.id },
     });
+    let orders = [];
+    let projectImage;
+    for (let order of allOrders) {
+      const project = await getProjectById(order.project_id, prisma);
+      const nftImage = await prisma.projectImages.findFirst({
+        where: { project_id: order.project_id, rol: "NFT" },
+      });
+      if (!nftImage) {
+        projectImage = await prisma.projectImages.findFirst({
+          where: { project_id: order.project_id, rol: "NFT" },
+        });
+      }
+      if (!project || !project.precio_unitario) continue;
+      orders.push({
+        order,
+        precio: project.precio_unitario * order.cantidad,
+        nombre_proyecto: project.titulo,
+        imageNFT: nftImage
+          ? await getImage(nftImage.path)
+          : projectImage
+          ? await getImage(projectImage.path)
+          : "",
+      });
+    }
     res.json(orders);
   } catch (error) {
     console.log(error);

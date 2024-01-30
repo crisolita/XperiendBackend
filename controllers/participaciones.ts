@@ -226,7 +226,11 @@ export const signedDocument = async (req: Request, res: Response) => {
     const order = await prisma.orders.findFirst({
       where: { document_id, user_id: USER.id },
     });
-    if (!order || order.status == "PAGO_DEVUELTO")
+    if (
+      !order ||
+      order.status == "PAGO_DEVUELTO" ||
+      order.status != "POR_FIRMAR"
+    )
       return res.status(404).json({ error: "Orden no encontrada" });
     console.log("llegue aqui antes de firmar");
     const signed = await isCompleted(document_id);
@@ -243,34 +247,31 @@ export const signedDocument = async (req: Request, res: Response) => {
       case "COMPRA":
         ///MINTEAR UN NFT?
         console.log("Voy a mintear");
-        // const mint = await xperiendNFT.functions.safeMint(
-        //   kyc?.wallet,
-        //   "tokenhash",
-        //   document_id,
-        //   order.project_id
-        // );
+        const mint = await xperiendNFT.functions.safeMint(
+          kyc?.wallet,
+          "tokenhash",
+          document_id,
+          order.project_id
+        );
         const id = await xperiendNFT.functions.id();
-        console.log(id);
-        console.log(ethers.BigNumber.from(id[0]._hex).toNumber(), "aquiii");
-        console.log(ethers.BigNumber.from(id).toNumber());
 
-        // nft = await prisma.nFT.create({
-        //   data: {
-        //     id: ethers.BigNumber.from(id._hex).toNumber(),
-        //     txHash: mint.hash,
-        //     project_id: order.project_id,
-        //   },
-        // });
-        // console.log("mintear", mint);
+        nft = await prisma.nFT.create({
+          data: {
+            id: ethers.BigNumber.from(id[0]._hex).toNumber(),
+            txHash: mint.hash,
+            project_id: order.project_id,
+          },
+        });
+        console.log("mintear", mint);
 
-        // newOrder = await updateOrder(
-        //   order.id,
-        //   {
-        //     status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
-        //     nft_id: ethers.BigNumber.from(id._hex).toNumber(),
-        //   },
-        //   prisma
-        // );
+        newOrder = await updateOrder(
+          order.id,
+          {
+            status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+            nft_id: ethers.BigNumber.from(id[0]._hex).toNumber(),
+          },
+          prisma
+        );
         break;
       case "RECLAMACION":
         break;

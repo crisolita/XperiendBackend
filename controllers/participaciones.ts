@@ -257,7 +257,7 @@ export const signedDocument = async (req: Request, res: Response) => {
 
         nft = await prisma.nFT.create({
           data: {
-            id: ethers.BigNumber.from(id[0]._hex).toNumber(),
+            id: ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
             txHash: mint.hash,
             project_id: order.project_id,
           },
@@ -268,7 +268,7 @@ export const signedDocument = async (req: Request, res: Response) => {
           order.id,
           {
             status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
-            nft_id: ethers.BigNumber.from(id[0]._hex).toNumber(),
+            nft_id: ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
           },
           prisma
         );

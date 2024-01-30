@@ -251,8 +251,8 @@ export const signedDocument = async (req: Request, res: Response) => {
         // );
         const id = await xperiendNFT.functions.id();
         console.log(id);
-        console.log(ethers.BigNumber.from(id._hex.toString()).toNumber());
-        console.log(ethers.BigNumber.from(id._hex).toNumber());
+        console.log(ethers.BigNumber.from(id).toNumber());
+        console.log(ethers.BigNumber.from(id).toNumber());
 
         // nft = await prisma.nFT.create({
         //   data: {

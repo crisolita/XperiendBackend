@@ -236,7 +236,7 @@ export const signedDocument = async (req: Request, res: Response) => {
     const signed = await isCompleted(document_id);
     console.log("llegue aqui despues de firmar");
 
-    if (!signed) return res.json({ data: { document_signed: signed, order } });
+    if (!signed) return res.json(signed);
     newOrder = await updateOrder(
       order.id,
       { status: "FIRMADO_POR_ENTREGAR" },

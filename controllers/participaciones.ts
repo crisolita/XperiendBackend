@@ -2,6 +2,8 @@ import { PrismaClient, User } from "@prisma/client";
 import { Request, Response, response } from "express";
 import { getProjectById } from "../service/backoffice";
 import moment from "moment";
+import { ethers } from "ethers";
+
 import { createCheckoutSession, validateCheckout } from "../service/stripe";
 import {
   getCuentaById,
@@ -250,7 +252,7 @@ export const signedDocument = async (req: Request, res: Response) => {
         const id = await xperiendNFT.functions.id();
         nft = await prisma.nFT.create({
           data: {
-            id: id,
+            id: ethers.BigNumber.from(id._hex).toNumber(),
             txHash: mint.hash,
             project_id: order.project_id,
           },
@@ -260,7 +262,10 @@ export const signedDocument = async (req: Request, res: Response) => {
         console.log(id);
         newOrder = await updateOrder(
           order.id,
-          { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO", nft_id: id },
+          {
+            status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+            nft_id: ethers.BigNumber.from(id._hex).toNumber(),
+          },
           prisma
         );
         break;

@@ -331,6 +331,7 @@ export const getkycUser = async (req: Request, res: Response) => {
       const kycImgsKey = await prisma.kycImages.findMany({
         where: { info_id: kyc?.id },
       });
+      console.log(kycImgsKey);
       for (let key of kycImgsKey) {
         const ruta = await getImage(key.path);
         kycImgs.push({

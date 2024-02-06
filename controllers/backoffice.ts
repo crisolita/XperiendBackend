@@ -1116,6 +1116,21 @@ export const getAllUsersController = async (req: Request, res: Response) => {
     const users = await getAllUsers(prisma);
     let data = [];
     for (let user of users) {
+      let kycImgs = [];
+      const kyc = await getKycInfoByUser(Number(user.id), prisma);
+      if (kyc) {
+        const kycImgsKey = await prisma.kycImages.findMany({
+          where: { info_id: kyc?.id },
+        });
+        console.log(kycImgsKey);
+        for (let key of kycImgsKey) {
+          const ruta = await getImage(key.path);
+          kycImgs.push({
+            rol: key.rol,
+            path: ruta,
+          });
+        }
+      }
       data.push({
         userId: user.id,
         userName: user.userName,
@@ -1125,6 +1140,8 @@ export const getAllUsersController = async (req: Request, res: Response) => {
         referrallFriend: user.referallFriend,
         newsletter: user.newsletter,
         kycStatus: user.kycStatus,
+        kycInfo: kyc,
+        kycImagenes: kycImgs,
       });
     }
     return res.status(200).json(data);
@@ -1228,12 +1245,10 @@ export const cambiarStatusDeTransferenciaParaXREN = async (
         });
       } catch (e) {
         console.log(e);
-        return res
-          .status(500)
-          .json({
-            error:
-              "Error al agregar user a fase, revisa fase de venta y smartcontract",
-          });
+        return res.status(500).json({
+          error:
+            "Error al agregar user a fase, revisa fase de venta y smartcontract",
+        });
       }
 
       await sendWelcomeClub(user.email, `${kyc?.name} ${kyc?.lastname}`);

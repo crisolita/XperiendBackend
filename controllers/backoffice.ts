@@ -1217,15 +1217,25 @@ export const cambiarStatusDeTransferenciaParaXREN = async (
         `Compra de ${order.unidades} XREN`,
         prisma
       );
-      const mint = await saleContract.functions.addUsersToVesting(
-        ethers.utils.parseEther(order.unidades.toString()),
-        kyc?.wallet
-      );
+      try {
+        const mint = await saleContract.functions.addUsersToVesting(
+          ethers.utils.parseEther(order.unidades.toString()),
+          kyc?.wallet
+        );
+        newOrder = await prisma.ordersXREN.update({
+          where: { id: order.id },
+          data: { hash: mint.hash, status: "PAGO_EXITOSO_ENTREGADO" },
+        });
+      } catch (e) {
+        console.log(e);
+        return res
+          .status(500)
+          .json({
+            error:
+              "Error al agregar user a fase, revisa fase de venta y smartcontract",
+          });
+      }
 
-      newOrder = await prisma.ordersXREN.update({
-        where: { id: order.id },
-        data: { hash: mint.hash, status: "PAGO_EXITOSO_ENTREGADO" },
-      });
       await sendWelcomeClub(user.email, `${kyc?.name} ${kyc?.lastname}`);
 
       return res.status(200).json({ pago, newOrder });

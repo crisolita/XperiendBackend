@@ -228,6 +228,7 @@ model OrdersXREN {
   amountEUR Float
   hash      String?
   fecha     DateTime?
+    metodo_de_pago METODODEPAGO?
   checkout_id String?
   user      User            @relation(fields: [user_id], references: [id])
 }

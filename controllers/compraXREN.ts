@@ -51,6 +51,7 @@ export const compraXRENStripe = async (req: Request, res: Response) => {
         status: "PAGO_PENDIENTE",
         amountEUR: amount / 100,
         unidades: tokenAmount,
+        metodo_de_pago: "TARJETA_DE_CREDITO",
         fecha: new Date(),
       },
     });
@@ -117,6 +118,7 @@ export const compraXRENTransferenciaBancaria = async (
         status: "PAGO_PENDIENTE",
         amountEUR: amount,
         unidades: tokenAmount,
+        metodo_de_pago: "TRANSFERENCIA_BANCARIA",
         fecha: new Date(),
       },
     });
@@ -175,6 +177,7 @@ export const compraXRENCripto = async (req: Request, res: Response) => {
         unidades: tokenAmount,
         amountEUR: amount,
         hash: hash,
+        metodo_de_pago: "USDT",
         fecha: new Date(),
       },
     });

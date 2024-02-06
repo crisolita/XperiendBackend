@@ -276,7 +276,10 @@ export const updateKYC = async (req: Request, res: Response) => {
         let data = Buffer.from(base64Fiscal, "base64");
         await uploadImage(data, pathFiscal);
       }
-      if (prueba_titularidad && image) {
+      const imageTitularidad = await prisma.kycImages.findFirst({
+        where: { info_id: info.id, rol: "TITULAR_CUENTA" },
+      });
+      if (prueba_titularidad && imageTitularidad) {
         const pathTitularidad = `kyc_image_${user.id}_${
           info.id
         }_${"TITULARIDAD"}`;

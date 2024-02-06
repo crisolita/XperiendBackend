@@ -53,6 +53,7 @@ export const updateOrder = async (
     checkout_id?: string;
     fecha_devolucion?: Date;
     exchange_receiver?: number;
+    info_devolucion?: string;
   },
   prisma: PrismaClient
 ) => {

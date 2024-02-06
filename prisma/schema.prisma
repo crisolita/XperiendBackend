@@ -208,6 +208,7 @@ model Orders {
   document_id       String?
   fecha             DateTime?
   fecha_devolucion DateTime?
+  info_devolucion String?
   nft_id            Int?
   cantidad          Int
   metodo_de_pago    METODODEPAGO?

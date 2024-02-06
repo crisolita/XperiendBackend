@@ -465,7 +465,7 @@ export const updateProjectEstado = async (req: Request, res: Response) => {
         });
         break;
       case "ABIERTO":
-        if (estado !== "EN_PROCESO" || estado !== "NO_COMPLETADO")
+        if (estado !== "EN_PROCESO" && estado !== "NO_COMPLETADO")
           return res.status(400).json({ error: "Estado incorrecto" });
         data = await prisma.projects.update({
           where: { id: project.id },
@@ -619,8 +619,14 @@ export const cambiarStatusDeTransferenciaParticipacion = async (
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
 
-    const { order_id, amountUSD, status, fecha_recibido, fecha_devolucion } =
-      req.body;
+    const {
+      order_id,
+      amountUSD,
+      status,
+      fecha_recibido,
+      fecha_devolucion,
+      info_devolucion,
+    } = req.body;
     const order = await getOrderById(order_id, prisma);
     if (!order) return res.status(404).json({ error: "Orden no encontrada" });
     let user = await getUserById(order.user_id, prisma);
@@ -746,6 +752,7 @@ export const cambiarStatusDeTransferenciaParticipacion = async (
         {
           status: "PAGO_DEVUELTO",
           fecha_devolucion: new Date(fecha_devolucion),
+          info_devolucion,
         },
         prisma
       );
@@ -827,9 +834,54 @@ export const getAllProjectsToAdmin = async (req: Request, res: Response) => {
     const projects = await prisma.projects.findMany();
     const users = await getAllUsers(prisma);
     for (let project of projects) {
-      const orders = await prisma.orders.findMany({
-        where: { id: project.id, status: "PAGADO_Y_ENTREGADO_Y_FIRMADO" },
+      const finishedOrders = await prisma.orders.findMany({
+        where: {
+          project_id: project.id,
+          status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+        },
       });
+      let ordersCompra = await prisma.orders.findMany({
+        where: { project_id: project.id, tipo: "COMPRA" },
+      });
+      let ordersIntercambio = await prisma.orders.findMany({
+        where: { project_id: project.id, tipo: "INTERCAMBIO" },
+      });
+      let ordersReclamacion = await prisma.orders.findMany({
+        where: { project_id: project.id, tipo: "RECLAMACION" },
+      });
+      let ordersReinversion = await prisma.orders.findMany({
+        where: { project_id: project.id, tipo: "REINVERSION" },
+      });
+      let ordersActiveCompra = ordersCompra.filter((x) => {
+        return (
+          x.status == "FIRMADO_POR_ENTREGAR" ||
+          x.status == "PAGO_PENDIENTE" ||
+          x.status == "POR_FIRMAR"
+        );
+      });
+      let ordersActiveIntercambio = ordersIntercambio.filter((x) => {
+        return (
+          x.status == "FIRMADO_POR_ENTREGAR" ||
+          x.status == "PAGO_PENDIENTE" ||
+          x.status == "POR_FIRMAR" ||
+          x.status == "POR_INTERCAMBIAR"
+        );
+      });
+      let ordersActiveReinversion = ordersReinversion.filter((x) => {
+        return (
+          x.status == "FIRMADO_POR_ENTREGAR" ||
+          x.status == "PAGO_PENDIENTE" ||
+          x.status == "POR_FIRMAR"
+        );
+      });
+      let ordersActiveReclamacion = ordersReclamacion.filter((x) => {
+        return (
+          x.status == "FIRMADO_POR_ENTREGAR" ||
+          x.status == "PAGO_PENDIENTE" ||
+          x.status == "POR_FIRMAR"
+        );
+      });
+
       escenario = await prisma.escenario_economico.findMany({
         where: { project_id: project.id },
       });
@@ -866,7 +918,7 @@ export const getAllProjectsToAdmin = async (req: Request, res: Response) => {
         }
       }
       let investors = [];
-      for (let order of orders) {
+      for (let order of finishedOrders) {
         const user = await getUserById(order.user_id, prisma);
         investors.push({
           userId: order.user_id,
@@ -885,6 +937,17 @@ export const getAllProjectsToAdmin = async (req: Request, res: Response) => {
         userSale,
         investors,
         favsUser,
+        comprasActivas: ordersActiveCompra.length,
+        comprasTerminados: ordersCompra.length - ordersActiveCompra.length,
+        intercambioActivas: ordersActiveIntercambio.length,
+        intercambioTerminado:
+          ordersIntercambio.length - ordersActiveIntercambio.length,
+        reinversionActiva: ordersActiveReinversion.length,
+        reinversionTerminada:
+          ordersReinversion.length - ordersActiveReinversion.length,
+        reclamacionActiva: ordersActiveReclamacion.length,
+        reclamacionTerminada:
+          ordersReclamacion.length - ordersActiveReclamacion.length,
       });
     }
     return res.json(data);

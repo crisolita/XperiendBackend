@@ -126,19 +126,31 @@ export const compraParticipacionTransferenciaBancaria = async (
     const project = await getProjectById(project_id, prisma);
     const gestion = await getGestionByProjectId(project_id, prisma);
     const kycInfo = await getKycInfoByUser(USER.id, prisma);
-    if (
-      !project ||
-      !gestion ||
-      !project.precio_unitario ||
-      !project.cuenta_id ||
-      !kycInfo?.wallet ||
-      !project.cantidadRestante ||
-      !gestion.fecha_fin_venta ||
-      !project.pagoTransferencia
-    )
+
+    if (!project)
+      return res.status(404).json({ error: "Proyecto no encontrado" });
+    if (!gestion)
+      return res.status(404).json({ error: "No hay gestion asignada" });
+    if (!project.precio_unitario)
+      return res.status(404).json({ error: "No hay precio unitario asignado" });
+    if (!project.cuenta_id)
+      return res.status(404).json({ error: "No hay cuenta asignada" });
+    if (!project.cantidadRestante)
       return res
         .status(404)
-        .json({ error: "Proyecto no encontrado o sin fechas asignadas" });
+        .json({ error: "Cantidad restante no es suficiente" });
+    if (!kycInfo?.wallet)
+      return res
+        .status(404)
+        .json({ error: "No hay wallet de usuario asignada" });
+    if (!gestion.fecha_fin_venta)
+      return res
+        .status(404)
+        .json({ error: "No hay fecha fin de venta asignada" });
+    if (!project.pagoTransferencia)
+      return res
+        .status(404)
+        .json({ error: "No se permite pago con transferencia" });
     const fecha_abierto_por_usuario = await getFechaDeVentaInicial(
       kycInfo.wallet,
       project?.id,

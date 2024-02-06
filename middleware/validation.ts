@@ -14,14 +14,11 @@ export const querySchemaRegistro = Joi.object({
       "string.required": `Contraseña es requerida`,
       "string.pattern.base": "No cumple las condiciones de contraseña",
     }),
-  email: Joi.string()
-    .email({ minDomainSegments: 2 })
-    .required()
-    .messages({
-      "string.default": "El email debe ser valido",
-      "string.required": `Email es requerido`,
-      "string.email": "Debe ser un email valido",
-    }),
+  email: Joi.string().email({ minDomainSegments: 2 }).required().messages({
+    "string.default": "El email debe ser valido",
+    "string.required": `Email es requerido`,
+    "string.email": "Debe ser un email valido",
+  }),
   referallUser: Joi.string().min(6).optional(),
   userName: Joi.string().min(6).optional(),
   newsletter: Joi.boolean().optional(),
@@ -235,6 +232,7 @@ export const querySchemaUpdateTransferParticipaciones = Joi.object({
   status: Joi.string().valid("CONFIRMADO", "CANCELADO", "DEVUELTO").required(),
   fecha_recibido: Joi.date(),
   fecha_devolucion: Joi.date(),
+  info_devolucion: Joi.string(),
 });
 
 export const querySchemaCompraXRENTransferencia = Joi.object({
@@ -289,14 +287,11 @@ export const querySchemaCompraPartTransf = Joi.object({
   cantidad: Joi.number().required(),
 });
 export const querySchemaGetRecoveryCode = Joi.object({
-  email: Joi.string()
-    .email({ minDomainSegments: 2 })
-    .required()
-    .messages({
-      "string.default": "El email debe ser valido",
-      "string.required": `Email es requerido`,
-      "string.email": "Debe ser un email valido",
-    }),
+  email: Joi.string().email({ minDomainSegments: 2 }).required().messages({
+    "string.default": "El email debe ser valido",
+    "string.required": `Email es requerido`,
+    "string.email": "Debe ser un email valido",
+  }),
 });
 
 export const querySchemaChangePassword = Joi.object({
@@ -314,28 +309,22 @@ export const querySchemaChangePassword = Joi.object({
       "string.required": `Contraseña es requerida`,
       "string.pattern.base": "No cumple las condiciones de contraseña",
     }),
-  email: Joi.string()
-    .email({ minDomainSegments: 2 })
-    .required()
-    .messages({
-      "string.default": "El email debe ser valido",
-      "string.required": `Email es requerido`,
-      "string.email": "Debe ser un email valido",
-    }),
+  email: Joi.string().email({ minDomainSegments: 2 }).required().messages({
+    "string.default": "El email debe ser valido",
+    "string.required": `Email es requerido`,
+    "string.email": "Debe ser un email valido",
+  }),
   authCode: Joi.string().min(6).required(),
 });
 export const querySchemaGoogleAuth = Joi.object({
   token: Joi.string().required(),
 });
 export const querySchemaLogin = Joi.object({
-  email: Joi.string()
-    .email({ minDomainSegments: 2 })
-    .required()
-    .messages({
-      "string.default": "El email debe ser valido",
-      "string.required": `Email es requerido`,
-      "string.email": "Debe ser un email valido",
-    }),
+  email: Joi.string().email({ minDomainSegments: 2 }).required().messages({
+    "string.default": "El email debe ser valido",
+    "string.required": `Email es requerido`,
+    "string.email": "Debe ser un email valido",
+  }),
   authCode: Joi.string().min(6).required(),
 });
 export const querySchemaGetKYCbyUser = Joi.object({

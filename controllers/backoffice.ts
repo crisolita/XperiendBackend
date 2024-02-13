@@ -177,7 +177,7 @@ export const addDoc = async (req: Request, res: Response) => {
       }
       // // Utiliza fetch aquí dentro
       const data = Buffer.from(
-        doc.base64.replace(/^data:doc\/(pdf);base64,/, ""),
+        doc.base64.replace(/^data:application\/(pdf);base64,/, ""),
         "base64"
       );
 

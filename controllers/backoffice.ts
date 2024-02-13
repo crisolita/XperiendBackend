@@ -940,9 +940,10 @@ export const getAllProjectsToAdmin = async (req: Request, res: Response) => {
         favsUser,
         comprasActivas: ordersActiveCompra.length,
         comprasTerminados: ordersCompra.length - ordersActiveCompra.length,
-        participaciones_activas: project.cantidadInicial
-          ? project.cantidadInicial
-          : 0 - (project.cantidadRestante ? project.cantidadRestante : 0),
+        participaciones_activas:
+          project.cantidadInicial && project.cantidadRestante
+            ? project.cantidadInicial - project.cantidadRestante
+            : 0,
         reinversionActiva: ordersActiveReinversion.length,
         reinversionTerminada:
           ordersReinversion.length - ordersActiveReinversion.length,

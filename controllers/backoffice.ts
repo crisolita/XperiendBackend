@@ -101,6 +101,7 @@ export const addImage = async (req: Request, res: Response) => {
         image.base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, ""),
         "base64"
       );
+
       if (image.rol == "PRINCIPAL" || image.rol == "NFT") {
         const exist = await prisma.projectImages.findFirst({
           where: { project_id: project_id, rol: image.rol },
@@ -939,15 +940,20 @@ export const getAllProjectsToAdmin = async (req: Request, res: Response) => {
         favsUser,
         comprasActivas: ordersActiveCompra.length,
         comprasTerminados: ordersCompra.length - ordersActiveCompra.length,
-        intercambioActivas: ordersActiveIntercambio.length,
-        intercambioTerminado:
-          ordersIntercambio.length - ordersActiveIntercambio.length,
+        participaciones_activas: project.cantidadInicial
+          ? project.cantidadInicial
+          : 0 - (project.cantidadRestante ? project.cantidadRestante : 0),
         reinversionActiva: ordersActiveReinversion.length,
         reinversionTerminada:
           ordersReinversion.length - ordersActiveReinversion.length,
         reclamacionActiva: ordersActiveReclamacion.length,
         reclamacionTerminada:
           ordersReclamacion.length - ordersActiveReclamacion.length,
+        participacionesTerminadas:
+          ordersReinversion.length -
+          ordersActiveReinversion.length +
+          ordersReclamacion.length -
+          ordersActiveReclamacion.length,
       });
     }
     return res.json(data);

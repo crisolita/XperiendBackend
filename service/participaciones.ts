@@ -132,6 +132,7 @@ export const getFechaDeVentaInicial = async (
 ) => {
   const XRENBALANCE = await getTotalBalanceVenta(wallet);
   const XRENSTAKE = await getTotalBalanceStake(wallet);
+  if (XRENBALANCE == 0 && XRENSTAKE == 0) return null;
   const normalUser = await prisma.userManage.findFirst({
     where: { project_id, tipoDeUser: "REGULAR" },
   });

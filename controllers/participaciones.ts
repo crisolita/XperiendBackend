@@ -74,6 +74,10 @@ export const compraParticipacionStripe = async (
     );
     const now = moment();
     console.log(fecha_abierto_por_usuario, gestion.fecha_fin_venta);
+    if (fecha_abierto_por_usuario == null)
+      return res.status(400).json({
+        error: "Tienes que formar parte del club xperiend para comprar",
+      });
     if (
       !now.isBetween(
         moment(fecha_abierto_por_usuario),
@@ -254,6 +258,15 @@ export const signedDocument = async (req: Request, res: Response) => {
       { status: "FIRMADO_POR_ENTREGAR" },
       prisma
     );
+    let project = await prisma.projects.findUnique({
+      where: { id: order.project_id },
+    });
+
+    if (!project?.cantidadRestante)
+      return res.status(400).json({
+        error:
+          "No hay cantidad restante, escribe a atencion al cliente para la devolucion de la inversion",
+      });
 
     switch (order.tipo) {
       case "COMPRA":
@@ -284,6 +297,12 @@ export const signedDocument = async (req: Request, res: Response) => {
           },
           prisma
         );
+        project = await prisma.projects.update({
+          where: { id: order.project_id },
+          data: {
+            cantidadRestante: project.cantidadRestante - 1,
+          },
+        });
         break;
       case "RECLAMACION":
         break;

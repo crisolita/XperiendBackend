@@ -1582,6 +1582,7 @@ export const getProjectToUser = async (req: Request, res: Response) => {
     });
 
     let documentos: any[] = [];
+    let owner;
     if (user?.kycStatus === "APROBADO") {
       const documentosKyc = await prisma.projectDocs.findMany({
         where: {
@@ -1591,7 +1592,7 @@ export const getProjectToUser = async (req: Request, res: Response) => {
         },
       });
 
-      const owner = await prisma.orders.findFirst({
+      owner = await prisma.orders.findFirst({
         where: {
           user_id: user.id,
           status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
@@ -1633,6 +1634,7 @@ export const getProjectToUser = async (req: Request, res: Response) => {
       imagenes,
       userSale,
       docs,
+      owner: owner ? true : false,
     };
 
     return res.json(data);

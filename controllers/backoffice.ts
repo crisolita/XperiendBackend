@@ -522,7 +522,7 @@ export const updateProjectTemplateDocs = async (
       data = await prisma.templates.update({
         where: { id: isAlready.id },
         data: {
-          id: template_id,
+          template_id: template_id,
         },
       });
     } else {

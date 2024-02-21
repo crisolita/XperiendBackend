@@ -300,7 +300,7 @@ export const signedDocument = async (req: Request, res: Response) => {
         project = await prisma.projects.update({
           where: { id: order.project_id },
           data: {
-            cantidadRestante: project.cantidadRestante - 1,
+            cantidadRestante: project.cantidadRestante - order.cantidad,
           },
         });
         break;

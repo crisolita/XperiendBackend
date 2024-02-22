@@ -626,7 +626,7 @@ export const crearReclamar = async (req: Request, res: Response) => {
     const nft = await prisma.nFT.findUnique({ where: { id: nftId } });
     if (!nft) return res.status(404).json({ error: "NFT no encontrado" });
     const project = await getProjectById(nft?.project_id, prisma);
-    if (!project || project.estado != "EN_PROCESO" || claim.status != 1)
+    if (!project || project.estado != "CERRADO" || claim.status != 1)
       return res
         .status(404)
         .json({ error: "Proyecto no encontrado o terminado" });
@@ -684,7 +684,7 @@ export const crearReinversion = async (req: Request, res: Response) => {
     const nft = await prisma.nFT.findUnique({ where: { id: nftId } });
     if (!nft) return res.status(404).json({ error: "NFT no encontrado" });
     const project = await getProjectById(nft?.project_id, prisma);
-    if (!project || project.estado != "EN_PROCESO" || reinvest.status != 1)
+    if (!project || project.estado != "CERRADO" || reinvest.status != 1)
       return res
         .status(404)
         .json({ error: "Proyecto no encontrado o terminado" });

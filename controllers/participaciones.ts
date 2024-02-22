@@ -286,6 +286,8 @@ export const signedDocument = async (req: Request, res: Response) => {
             data: {
               id: ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
               txHash: mint.hash,
+              owner_id: USER.id,
+              order_id: order.id,
               project_id: order.project_id,
             },
           });

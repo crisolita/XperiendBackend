@@ -272,28 +272,31 @@ export const signedDocument = async (req: Request, res: Response) => {
       case "COMPRA":
         ///MINTEAR UN NFT?
         console.log("Voy a mintear");
-        const mint = await xperiendNFT.functions.safeMint(
-          kyc?.wallet,
-          "tokenhash",
-          document_id,
-          order.project_id
-        );
-        const id = await xperiendNFT.functions.id();
-
-        nft = await prisma.nFT.create({
-          data: {
-            id: ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
-            txHash: mint.hash,
-            project_id: order.project_id,
-          },
-        });
-        console.log("mintear", mint);
+        let nftsID = [];
+        for (let i = 0; i < order.cantidad; i++) {
+          const mint = await xperiendNFT.functions.safeMint(
+            kyc?.wallet,
+            "tokenhash",
+            document_id,
+            order.project_id
+          );
+          const id = await xperiendNFT.functions.id();
+          nftsID.push(ethers.BigNumber.from(id[0]._hex).toNumber() + 1);
+          nft = await prisma.nFT.create({
+            data: {
+              id: ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
+              txHash: mint.hash,
+              project_id: order.project_id,
+            },
+          });
+          console.log("mintear", mint);
+        }
 
         newOrder = await updateOrder(
           order.id,
           {
             status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
-            nft_id: ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
+            nft_id: nftsID,
           },
           prisma
         );

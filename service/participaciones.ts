@@ -47,7 +47,7 @@ export const updateOrder = async (
   data: {
     document_id?: string;
     status?: EstadoPagoYFirma;
-    nft_id?: number;
+    nft_id?: number[];
     cantidad?: number;
     url_sign?: string;
     checkout_id?: string;

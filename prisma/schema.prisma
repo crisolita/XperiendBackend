@@ -209,13 +209,12 @@ model Orders {
   fecha             DateTime?
   fecha_devolucion DateTime?
   info_devolucion String?
-  nft_id            Int?
+  nft_id            Int[]
   cantidad          Int
   metodo_de_pago    METODODEPAGO?
   url_sign          String?
   exchange_receiver Int?
   checkout_id String?
-  nft               NFT?             @relation(fields: [nft_id], references: [id])
   project           Projects?        @relation(fields: [project_id], references: [id])
   user              User             @relation(fields: [user_id], references: [id])
 }
@@ -238,8 +237,9 @@ model NFT {
   id         Int       @id
   txHash     String
   project_id Int
+  order_id Int?
+  owner_id  Int?
   project    Projects? @relation(fields: [project_id], references: [id])
-  orders     Orders[]
 }
 
 enum StatusKYC {

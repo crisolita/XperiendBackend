@@ -1572,6 +1572,7 @@ export const getProjectToUser = async (req: Request, res: Response) => {
         path: ruta,
       });
     }
+    let nfts;
 
     const documentosClient = await prisma.projectDocs.findMany({
       where: {
@@ -1598,6 +1599,9 @@ export const getProjectToUser = async (req: Request, res: Response) => {
           status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
           project_id: project.id,
         },
+      });
+      nfts = await prisma.nFT.findMany({
+        where: { owner_id: USER.id, project_id: project.id },
       });
 
       const documentosOwner = owner
@@ -1635,6 +1639,7 @@ export const getProjectToUser = async (req: Request, res: Response) => {
       userSale,
       docs,
       owner: owner ? true : false,
+      nfts,
     };
 
     return res.json(data);

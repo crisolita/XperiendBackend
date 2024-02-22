@@ -280,7 +280,7 @@ export const signedDocument = async (req: Request, res: Response) => {
             document_id,
             order.project_id
           );
-          const id = await xperiendNFT.functions.id();
+          let id = await xperiendNFT.functions.id();
           nftsID.push(ethers.BigNumber.from(id[0]._hex).toNumber() + 1);
           nft = await prisma.nFT.create({
             data: {

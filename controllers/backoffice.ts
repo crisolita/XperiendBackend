@@ -1712,3 +1712,56 @@ export const getProjectPublic = async (req: Request, res: Response) => {
     return res.status(500).json({ error: e });
   }
 };
+
+export const terminarReclamacion = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const { order_id } = req.body;
+    const order = await getOrderById(order_id, prisma);
+    if (
+      !order ||
+      order.status != "FIRMADO_POR_ENTREGAR" ||
+      order.tipo != "INTERCAMBIO"
+    )
+      return res.status(404).json({ error: "Orden no encontrada" });
+    const endExchange = await xperiendNFT.endExchange(
+      order.nft_id,
+      order.exchange_receiver
+    );
+    const updated = await updateOrder(
+      order_id,
+      { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO" },
+      prisma
+    );
+    res.json({ endExchange, updated });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+
+export const cancelarReclamacion = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const { order_id } = req.body;
+    const order = await getOrderById(order_id, prisma);
+    if (
+      !order ||
+      order.status != "FIRMADO_POR_ENTREGAR" ||
+      order.tipo != "INTERCAMBIO"
+    )
+      return res.status(404).json({ error: "Orden no encontrada" });
+    const cancelExchange = await xperiendNFT.cancelExchange(order.nft_id);
+    const updated = await updateOrder(
+      order_id,
+      { status: "PAGO_CANCELADO" },
+      prisma
+    );
+    res.json({ cancelExchange, updated });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};

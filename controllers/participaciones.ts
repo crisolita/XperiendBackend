@@ -217,12 +217,12 @@ export const prueba = async (req: Request, res: Response) => {
     const prisma = req.prisma as PrismaClient;
     //        // @ts-ignore
     // const USER= req.user as User;
-    const hola = await crearDocumentoDeCompra(
-      1,
-      1,
-      "eWwha59cftFdfQVecqg825",
-      prisma
-    );
+    // const hola = await crearDocumentoDeCompra(
+    //   1,
+    //   1,
+    //   "eWwha59cftFdfQVecqg825",
+    //   prisma
+    // );
     res.json("prueba");
   } catch (error) {
     console.log(error);
@@ -647,10 +647,20 @@ export const crearReclamar = async (req: Request, res: Response) => {
     });
     if (!template)
       return res.status(404).json({ error: "Template no encotrado" });
-
+    const oldOrder = await prisma.orders.findFirst({
+      where: {
+        nft_id: nftId,
+        status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+        tipo: "COMPRA",
+        user_id: USER.id,
+      },
+    });
+    if (!oldOrder)
+      return res.status(400).json({ error: "Orden no encontrada" });
     const doc = await crearDocumentoReclamacion(
       USER.id,
       project.id,
+      oldOrder,
       template.template_id,
       prisma
     );
@@ -706,10 +716,20 @@ export const crearReinversion = async (req: Request, res: Response) => {
     });
     if (!template)
       return res.status(404).json({ error: "Template no encotrado" });
-
+    const oldOrder = await prisma.orders.findFirst({
+      where: {
+        nft_id: nftId,
+        status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+        tipo: "COMPRA",
+        user_id: USER.id,
+      },
+    });
+    if (!oldOrder)
+      return res.status(400).json({ error: "Orden no encontrada" });
     const doc = await crearDocumentoReinversion(
       USER.id,
       project.id,
+      oldOrder,
       template.template_id,
       prisma
     );
@@ -938,6 +958,7 @@ export const confirmCompraParticipacionStripe = async (
         const docData = await crearDocumentoDeCompra(
           USER.id,
           project.id,
+          order,
           template_id.template_id,
           prisma
         );

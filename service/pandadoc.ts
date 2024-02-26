@@ -1,6 +1,6 @@
 import * as pd_api from "pandadoc-node-client";
 import { getKycInfoByUser, getUserById } from "./user";
-import { PrismaClient } from "@prisma/client";
+import { Orders, PrismaClient } from "@prisma/client";
 import { getProjectById } from "./backoffice";
 // replace it with your API key
 const API_KEY = process.env.PANDADOC_KEY;
@@ -39,6 +39,7 @@ export const isCompleted = async (documentId: string) => {
 export const crearDocumentoDeCompra = async (
   userId: number,
   project_id: number,
+  order: Orders,
   template_id: string,
   prisma: PrismaClient
 ) => {
@@ -127,6 +128,17 @@ export const crearDocumentoDeCompra = async (
           name: "Document.fecha_hoy",
           value: `${new Date().toLocaleDateString()}`,
         },
+        {
+          name: "Document.num_participaciones",
+          value: `${order.cantidad}`,
+        },
+        {
+          name: "Document.importe",
+          value: `${
+            order.cantidad *
+            (project?.precio_unitario ? project?.precio_unitario : 0)
+          }`,
+        },
       ],
     };
     const document = await apiInstanceDocuments.createDocument({
@@ -158,6 +170,7 @@ export const crearDocumentoDeCompra = async (
 export const crearDocumentoReclamacion = async (
   userId: number,
   project_id: number,
+  order: Orders,
   template_id: string,
   prisma: PrismaClient
 ) => {
@@ -181,24 +194,83 @@ export const crearDocumentoReclamacion = async (
       ],
       tokens: [
         {
-          name: "Client.Company",
-          value: `${user.id}`,
-        },
-        {
-          name: "Client.FirstName",
+          name: "Client.nombre",
           value: `${kycInfo?.name}`,
         },
         {
-          name: "Client.LastName",
+          name: "Client.apellidos",
           value: `${kycInfo?.lastname}`,
         },
         {
-          name: "project.name",
-          value: `${project?.titulo}`,
+          name: "Client.tipo_identidad",
+          value: `${kycInfo?.document}`,
         },
         {
-          name: "project.id",
-          value: `${project?.id}`,
+          name: "Client.num_identidad",
+          value: `${kycInfo?.document_number}`,
+        },
+        {
+          name: "Client.direccion",
+          value: `${kycInfo?.address}`,
+        },
+        {
+          name: "Client.postal",
+          value: `${kycInfo?.postalCode}`,
+        },
+        {
+          name: "Client.pais",
+          value: `${kycInfo?.country}`,
+        },
+        {
+          name: "Client.fecha_nacimiento",
+          value: `${new Date(
+            kycInfo?.birth ? kycInfo.birth : ""
+          ).toLocaleDateString()}`,
+        },
+        {
+          name: "Client.pais_nacimiento",
+          value: `${kycInfo?.country_born}`,
+        },
+        {
+          name: "Client.provincia",
+          value: `${kycInfo?.state}`,
+        },
+        {
+          name: "Client.localidad",
+          value: `${kycInfo?.city}`,
+        },
+        {
+          name: "Client.estado_civil",
+          value: `${kycInfo?.estado_civil}`,
+        },
+        {
+          name: "Client.reg_matrimonio",
+          value: `${
+            kycInfo?.regimen_matrimonial ? kycInfo.regimen_matrimonial : null
+          }`,
+        },
+        {
+          name: "Client.telefono",
+          value: `${kycInfo?.telf}`,
+        },
+        {
+          name: "Client.email",
+          value: `${user.email}`,
+        },
+        {
+          name: "Document.fecha_hoy",
+          value: `${new Date().toLocaleDateString()}`,
+        },
+        {
+          name: "Document.num_participaciones",
+          value: `${order.cantidad}`,
+        },
+        {
+          name: "Document.importe",
+          value: `${
+            order.cantidad *
+            (project?.precio_unitario ? project?.precio_unitario : 0)
+          }`,
         },
       ],
     };
@@ -232,6 +304,7 @@ export const crearDocumentoReclamacion = async (
 export const crearDocumentoReinversion = async (
   userId: number,
   project_id: number,
+  order: Orders,
   template_id: string,
   prisma: PrismaClient
 ) => {
@@ -255,24 +328,83 @@ export const crearDocumentoReinversion = async (
       ],
       tokens: [
         {
-          name: "Client.Company",
-          value: `${user.id}`,
-        },
-        {
-          name: "Client.FirstName",
+          name: "Client.nombre",
           value: `${kycInfo?.name}`,
         },
         {
-          name: "Client.LastName",
+          name: "Client.apellidos",
           value: `${kycInfo?.lastname}`,
         },
         {
-          name: "project.name",
-          value: `${project?.titulo}`,
+          name: "Client.tipo_identidad",
+          value: `${kycInfo?.document}`,
         },
         {
-          name: "project.id",
-          value: `${project?.id}`,
+          name: "Client.num_identidad",
+          value: `${kycInfo?.document_number}`,
+        },
+        {
+          name: "Client.direccion",
+          value: `${kycInfo?.address}`,
+        },
+        {
+          name: "Client.postal",
+          value: `${kycInfo?.postalCode}`,
+        },
+        {
+          name: "Client.pais",
+          value: `${kycInfo?.country}`,
+        },
+        {
+          name: "Client.fecha_nacimiento",
+          value: `${new Date(
+            kycInfo?.birth ? kycInfo.birth : ""
+          ).toLocaleDateString()}`,
+        },
+        {
+          name: "Client.pais_nacimiento",
+          value: `${kycInfo?.country_born}`,
+        },
+        {
+          name: "Client.provincia",
+          value: `${kycInfo?.state}`,
+        },
+        {
+          name: "Client.localidad",
+          value: `${kycInfo?.city}`,
+        },
+        {
+          name: "Client.estado_civil",
+          value: `${kycInfo?.estado_civil}`,
+        },
+        {
+          name: "Client.reg_matrimonio",
+          value: `${
+            kycInfo?.regimen_matrimonial ? kycInfo.regimen_matrimonial : null
+          }`,
+        },
+        {
+          name: "Client.telefono",
+          value: `${kycInfo?.telf}`,
+        },
+        {
+          name: "Client.email",
+          value: `${user.email}`,
+        },
+        {
+          name: "Document.fecha_hoy",
+          value: `${new Date().toLocaleDateString()}`,
+        },
+        {
+          name: "Document.num_participaciones",
+          value: `${order.cantidad}`,
+        },
+        {
+          name: "Document.importe",
+          value: `${
+            order.cantidad *
+            (project?.precio_unitario ? project?.precio_unitario : 0)
+          }`,
         },
       ],
     };

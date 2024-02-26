@@ -666,6 +666,7 @@ export const cambiarStatusDeTransferenciaParticipacion = async (
         const docData = await crearDocumentoDeCompra(
           order.user_id,
           project.id,
+          order,
           template.template_id,
           prisma
         );

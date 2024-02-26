@@ -29,6 +29,8 @@ import { getDoc, getImage } from "../service/aws";
 import {
   compraRealizadaInvesthome,
   intercambioTransferenciaPendiente,
+  reclamacionPeticion,
+  reinversionPeticion,
   sendTransferenciaPendienteParticipaciones,
   sendWelcomeClub,
 } from "../service/mail";
@@ -678,6 +680,7 @@ export const crearReclamar = async (req: Request, res: Response) => {
         nft_id: nftId,
       },
     });
+    await reclamacionPeticion(USER.email, "usuario");
     res.json(order);
   } catch (error) {
     console.log(error);
@@ -747,6 +750,7 @@ export const crearReinversion = async (req: Request, res: Response) => {
         nft_id: nftId,
       },
     });
+    await reinversionPeticion(USER.email, "usuario");
     res.json(order);
   } catch (error) {
     console.log(error);

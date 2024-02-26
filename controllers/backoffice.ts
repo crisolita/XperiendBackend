@@ -37,6 +37,8 @@ import {
   compraAnuladaNoFirma,
   compraAnuladaNoPagado,
   compraRealizadaInvesthome,
+  reclamacionRealizada,
+  reinversionRealizada,
   sendKycAprobado,
   sendKycRechazado,
   sendPagoCanceladoXREN,
@@ -1725,6 +1727,8 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
       order.tipo != "RECLAMACION"
     )
       return res.status(404).json({ error: "Orden no encontrada" });
+    const user = await getUserById(order.user_id, prisma);
+    if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
     const endClaim = await xperiendNFT.endClaim(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
@@ -1732,6 +1736,10 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
       prisma
     );
     await prisma.nFT.delete({ where: { id: order.nft_id[0] } });
+    await reclamacionRealizada(
+      user.email,
+      user.userName ? user.userName : "usuario"
+    );
     res.json({ endClaim, updated });
   } catch (error) {
     console.log(error);
@@ -1775,6 +1783,8 @@ export const terminarReinversion = async (req: Request, res: Response) => {
       order.tipo != "REINVERSION"
     )
       return res.status(404).json({ error: "Orden no encontrada" });
+    const user = await getUserById(order.user_id, prisma);
+    if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
     const endReinvest = await xperiendNFT.endReinvest(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
@@ -1782,6 +1792,10 @@ export const terminarReinversion = async (req: Request, res: Response) => {
       prisma
     );
     await prisma.nFT.delete({ where: { id: order.nft_id[0] } });
+    await reinversionRealizada(
+      user.email,
+      user.userName ? user.userName : "usuario"
+    );
     res.json({ endReinvest, updated });
   } catch (error) {
     console.log(error);

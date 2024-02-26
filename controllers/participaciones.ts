@@ -647,12 +647,13 @@ export const crearReclamar = async (req: Request, res: Response) => {
     });
     if (!template)
       return res.status(404).json({ error: "Template no encotrado" });
-    const oldOrder = await prisma.orders.findFirst({
+    if (!nft.order_id)
+      return res
+        .status(400)
+        .json({ error: "No hay orden asignada a este NFT" });
+    const oldOrder = await prisma.orders.findUnique({
       where: {
-        nft_id: nftId,
-        status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
-        tipo: "COMPRA",
-        user_id: USER.id,
+        id: nft.order_id,
       },
     });
     if (!oldOrder)
@@ -716,12 +717,13 @@ export const crearReinversion = async (req: Request, res: Response) => {
     });
     if (!template)
       return res.status(404).json({ error: "Template no encotrado" });
-    const oldOrder = await prisma.orders.findFirst({
+    if (!nft.order_id)
+      return res
+        .status(400)
+        .json({ error: "No hay orden asignada a este NFT" });
+    const oldOrder = await prisma.orders.findUnique({
       where: {
-        nft_id: nftId,
-        status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
-        tipo: "COMPRA",
-        user_id: USER.id,
+        id: nft.order_id,
       },
     });
     if (!oldOrder)

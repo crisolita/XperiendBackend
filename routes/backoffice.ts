@@ -4,6 +4,8 @@ import {
   addImage,
   cambiarStatusDeTransferenciaParaXREN,
   cambiarStatusDeTransferenciaParticipacion,
+  cancelarReclamacion,
+  cancelarReinversion,
   changeRolUser,
   createProject,
   deleteImage,
@@ -20,6 +22,8 @@ import {
   getProjectToUser,
   getTemplatesByPandaDoc,
   manageSaleUser,
+  terminarReclamacion,
+  terminarReinversion,
   updateKYCStatus,
   updateProjectController,
   updateProjectCuenta,
@@ -85,6 +89,10 @@ router.post(
   addImage
 );
 router.post("/addDoc", validator.body(querySchemaAddDoc), isAdmin, addDoc);
+router.post("/endClaim", isAdmin, terminarReclamacion);
+router.post("/cancelClaim", isAdmin, cancelarReclamacion);
+router.post("/endReinvest", isAdmin, terminarReinversion);
+router.post("/cancelReinvest", isAdmin, cancelarReinversion);
 
 //gestion
 router.post(

@@ -1722,19 +1722,17 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
     if (
       !order ||
       order.status != "FIRMADO_POR_ENTREGAR" ||
-      order.tipo != "INTERCAMBIO"
+      order.tipo != "RECLAMACION"
     )
       return res.status(404).json({ error: "Orden no encontrada" });
-    const endExchange = await xperiendNFT.endExchange(
-      order.nft_id,
-      order.exchange_receiver
-    );
+    const endClaim = await xperiendNFT.endClaim(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
       { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO" },
       prisma
     );
-    res.json({ endExchange, updated });
+    await prisma.nFT.delete({ where: { id: order.nft_id[0] } });
+    res.json({ endClaim, updated });
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -1750,16 +1748,66 @@ export const cancelarReclamacion = async (req: Request, res: Response) => {
     if (
       !order ||
       order.status != "FIRMADO_POR_ENTREGAR" ||
-      order.tipo != "INTERCAMBIO"
+      order.tipo != "RECLAMACION"
     )
       return res.status(404).json({ error: "Orden no encontrada" });
-    const cancelExchange = await xperiendNFT.cancelExchange(order.nft_id);
+    const cancelClaim = await xperiendNFT.cancelClaim(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
       { status: "PAGO_CANCELADO" },
       prisma
     );
-    res.json({ cancelExchange, updated });
+    res.json({ cancelClaim, updated });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const terminarReinversion = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const { order_id } = req.body;
+    const order = await getOrderById(order_id, prisma);
+    if (
+      !order ||
+      order.status != "FIRMADO_POR_ENTREGAR" ||
+      order.tipo != "REINVERSION"
+    )
+      return res.status(404).json({ error: "Orden no encontrada" });
+    const endReinvest = await xperiendNFT.endReinvest(order.nft_id[0]);
+    const updated = await updateOrder(
+      order_id,
+      { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO" },
+      prisma
+    );
+    await prisma.nFT.delete({ where: { id: order.nft_id[0] } });
+    res.json({ endReinvest, updated });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+
+export const cancelarReinversion = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const { order_id } = req.body;
+    const order = await getOrderById(order_id, prisma);
+    if (
+      !order ||
+      order.status != "FIRMADO_POR_ENTREGAR" ||
+      order.tipo != "REINVERSION"
+    )
+      return res.status(404).json({ error: "Orden no encontrada" });
+    const cancelReinvest = await xperiendNFT.cancelReinvest(order.nft_id[0]);
+    const updated = await updateOrder(
+      order_id,
+      { status: "PAGO_CANCELADO" },
+      prisma
+    );
+    res.json({ cancelReinvest, updated });
   } catch (error) {
     console.log(error);
     res.status(500).json(error);

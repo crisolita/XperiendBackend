@@ -51,6 +51,8 @@ export const updateOrder = async (
     cantidad?: number;
     url_sign?: string;
     checkout_id?: string;
+    complete_at?: Date;
+    reference_number?: string;
     fecha_devolucion?: Date;
     exchange_receiver?: number;
     info_devolucion?: string;

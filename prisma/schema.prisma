@@ -212,6 +212,8 @@ model Orders {
   nft_id            Int[]
   cantidad          Int
   metodo_de_pago    METODODEPAGO?
+  complete_at       DateTime?
+  reference_number  String?
   url_sign          String?
   exchange_receiver Int?
   checkout_id String?

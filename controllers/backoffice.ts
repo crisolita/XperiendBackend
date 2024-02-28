@@ -1719,7 +1719,7 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { order_id } = req.body;
+    const { order_id, complete_at, reference_number } = req.body;
     const order = await getOrderById(order_id, prisma);
     if (
       !order ||
@@ -1732,7 +1732,11 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
     const endClaim = await xperiendNFT.endClaim(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
-      { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO" },
+      {
+        status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+        complete_at: new Date(complete_at),
+        reference_number,
+      },
       prisma
     );
     await prisma.nFT.delete({ where: { id: order.nft_id[0] } });
@@ -1751,7 +1755,7 @@ export const cancelarReclamacion = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { order_id } = req.body;
+    const { order_id, complete_at } = req.body;
     const order = await getOrderById(order_id, prisma);
     if (
       !order ||
@@ -1762,7 +1766,7 @@ export const cancelarReclamacion = async (req: Request, res: Response) => {
     const cancelClaim = await xperiendNFT.cancelClaim(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
-      { status: "PAGO_CANCELADO" },
+      { status: "PAGO_CANCELADO", complete_at },
       prisma
     );
     res.json({ cancelClaim, updated });
@@ -1775,7 +1779,7 @@ export const terminarReinversion = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { order_id } = req.body;
+    const { order_id, complete_at, reference_number } = req.body;
     const order = await getOrderById(order_id, prisma);
     if (
       !order ||
@@ -1788,7 +1792,11 @@ export const terminarReinversion = async (req: Request, res: Response) => {
     const endReinvest = await xperiendNFT.endReinvest(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
-      { status: "PAGADO_Y_ENTREGADO_Y_FIRMADO" },
+      {
+        status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+        complete_at: new Date(complete_at),
+        reference_number,
+      },
       prisma
     );
     await prisma.nFT.delete({ where: { id: order.nft_id[0] } });
@@ -1807,7 +1815,7 @@ export const cancelarReinversion = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
-    const { order_id } = req.body;
+    const { order_id, complete_at } = req.body;
     const order = await getOrderById(order_id, prisma);
     if (
       !order ||
@@ -1818,7 +1826,7 @@ export const cancelarReinversion = async (req: Request, res: Response) => {
     const cancelReinvest = await xperiendNFT.cancelReinvest(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
-      { status: "PAGO_CANCELADO" },
+      { status: "PAGO_CANCELADO", complete_at: new Date(complete_at) },
       prisma
     );
     res.json({ cancelReinvest, updated });

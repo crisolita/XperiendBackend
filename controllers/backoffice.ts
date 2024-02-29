@@ -1566,6 +1566,7 @@ export const getProjectToUser = async (req: Request, res: Response) => {
     keyImagenes = await prisma.projectImages.findMany({
       where: { project_id: project.id },
     });
+    const kyc = await getKycInfoByUser(USER.id, prisma);
     let imagenes = [];
     for (let key of keyImagenes) {
       const ruta = await getImage(key.path);
@@ -1575,7 +1576,8 @@ export const getProjectToUser = async (req: Request, res: Response) => {
         path: ruta,
       });
     }
-    let nfts;
+    let nftsDB,
+      nfts = [];
 
     const documentosClient = await prisma.projectDocs.findMany({
       where: {
@@ -1603,9 +1605,15 @@ export const getProjectToUser = async (req: Request, res: Response) => {
           project_id: project.id,
         },
       });
-      nfts = await prisma.nFT.findMany({
+      nftsDB = await prisma.nFT.findMany({
         where: { owner_id: USER.id, project_id: project.id },
       });
+      for (let nft of nftsDB) {
+        let owner = await xperiendNFT.ownerOf(nft.id);
+        if (owner == kyc?.wallet) {
+          nfts.push(nft);
+        }
+      }
 
       const documentosOwner = owner
         ? await prisma.projectDocs.findMany({

@@ -1797,7 +1797,12 @@ export const terminarReinversion = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Orden no encontrada" });
     const user = await getUserById(order.user_id, prisma);
     if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
-    const endReinvest = await xperiendNFT.endReinvest(order.nft_id[0]);
+    const endReinvest = await xperiendNFT.endReinvest(
+      order.nft_id[0],
+      order.project_id,
+      reference_number,
+      order.document_id
+    );
     const updated = await updateOrder(
       order_id,
       {

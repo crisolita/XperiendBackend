@@ -1774,7 +1774,7 @@ export const cancelarReclamacion = async (req: Request, res: Response) => {
     const cancelClaim = await xperiendNFT.cancelClaim(order.nft_id[0]);
     const updated = await updateOrder(
       order_id,
-      { status: "PAGO_CANCELADO", complete_at },
+      { status: "PAGO_CANCELADO", complete_at: new Date(complete_at) },
       prisma
     );
     res.json({ cancelClaim, updated });

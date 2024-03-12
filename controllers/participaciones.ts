@@ -170,6 +170,10 @@ export const compraParticipacionTransferenciaBancaria = async (
         .status(400)
         .json({ error: "No hay suficientes participaciones a comprar" });
     const now = moment();
+    if (fecha_abierto_por_usuario == null)
+      return res.status(400).json({
+        error: "Tienes que formar parte del club xperiend para comprar",
+      });
     if (
       !now.isBetween(
         moment(fecha_abierto_por_usuario),
@@ -275,6 +279,7 @@ export const signedDocument = async (req: Request, res: Response) => {
         ///MINTEAR UN NFT?
         console.log("Voy a mintear");
         let nftsID = [];
+        let id;
         for (let i = 0; i < order.cantidad; i++) {
           const mint = await xperiendNFT.functions.safeMint(
             kyc?.wallet,
@@ -282,7 +287,7 @@ export const signedDocument = async (req: Request, res: Response) => {
             document_id,
             order.project_id
           );
-          let id = await xperiendNFT.functions.id();
+          id = await xperiendNFT.functions.id();
           nftsID.push(ethers.BigNumber.from(id[0]._hex).toNumber() + 1);
           nft = await prisma.nFT.create({
             data: {

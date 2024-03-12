@@ -292,6 +292,7 @@ export const signedDocument = async (req: Request, res: Response) => {
             ethers.BigNumber.from(id[0]._hex).toNumber() + 1,
             "soy id "
           );
+          console.log(id);
           nftsID.push(ethers.BigNumber.from(id[0]._hex).toNumber() + 1);
           nft = await prisma.nFT.create({
             data: {

@@ -399,8 +399,8 @@ export const userCanBuy = async (req: Request, res: Response) => {
     // @ts-ignore
     const USER = req.user as User;
     const { project_id } = req.body;
-    //  const user = await getUserById(USER.id, prisma);
-    //  if(!user) return res.status(404).json({error:"Usuario no encontrado"})
+    const user = await getUserById(USER.id, prisma);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
     const kyc = await getKycInfoByUser(USER.id, prisma);
     if (!kyc || !kyc.wallet)
       return res.status(404).json({ error: "Wallet o kyc no encontrado" });
@@ -409,6 +409,7 @@ export const userCanBuy = async (req: Request, res: Response) => {
       Number(project_id),
       prisma
     );
+    if (!fecha_inicial) return res.json(false);
     const now = moment();
     if (now.isBefore(fecha_inicial)) return res.json(false);
     return res.json(true);

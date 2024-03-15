@@ -49,9 +49,9 @@ export const crearDocumentoDeCompra = async (
     const kycInfo = await getKycInfoByUser(user?.id, prisma);
     if (!kycInfo) return undefined;
     const documentCreateRequest: pd_api.DocumentCreateRequest = {
-      name: "Documento de Compra",
+      name: "Contrato de venta",
       templateUuid: template_id,
-      tags: ["Esta es una Compra"],
+      tags: ["Esta es una venta"],
       recipients: [
         {
           email: user.email,
@@ -263,14 +263,11 @@ export const crearDocumentoReclamacion = async (
         },
         {
           name: "Document.num_participaciones",
-          value: `${order.cantidad}`,
+          value: `1`,
         },
         {
           name: "Document.importe",
-          value: `${
-            order.cantidad *
-            (project?.precio_unitario ? project?.precio_unitario : 0)
-          }`,
+          value: `${project?.precio_unitario ? project?.precio_unitario : 0}`,
         },
       ],
     };
@@ -397,14 +394,11 @@ export const crearDocumentoReinversion = async (
         },
         {
           name: "Document.num_participaciones",
-          value: `${order.cantidad}`,
+          value: `1`,
         },
         {
           name: "Document.importe",
-          value: `${
-            order.cantidad *
-            (project?.precio_unitario ? project?.precio_unitario : 0)
-          }`,
+          value: `${project?.precio_unitario ? project?.precio_unitario : 0}`,
         },
       ],
     };

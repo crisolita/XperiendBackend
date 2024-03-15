@@ -316,6 +316,21 @@ export const signedDocument = async (req: Request, res: Response) => {
             cantidadRestante: project.cantidadRestante - order.cantidad,
           },
         });
+        const image = await prisma.projectImages.findFirst({
+          where: { project_id: project.id, rol: "PRINCIPAL" },
+        });
+        let imageProject;
+        if (image) {
+          imageProject = await getImage(image.path);
+        }
+        await compraRealizadaInvesthome(
+          USER.email,
+          `${kyc?.name} ${kyc?.lastname}`,
+          project.titulo,
+          `https://testnet.bscscan.com/address/0x817f42236d7a293E5A6C5f33827076a9Ab113Ea5`,
+          order.url_sign,
+          imageProject
+        );
         break;
       case "RECLAMACION":
         break;
@@ -985,10 +1000,7 @@ export const confirmCompraParticipacionStripe = async (
             status: "POR_FIRMAR",
           },
         });
-        await compraRealizadaInvesthome(
-          USER.email,
-          `${kycInfo.name} ${kycInfo.lastname}`
-        );
+
         return res.status(200).json({ pago, order });
       }
     } else return res.status(400).json({ error: "No hay pago" });

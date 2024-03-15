@@ -689,10 +689,6 @@ export const cambiarStatusDeTransferenciaParticipacion = async (
           user?.email,
           `${kyc?.name} ${kyc?.lastname}`
         );
-        await compraRealizadaInvesthome(
-          user.email,
-          `${kyc?.name} ${kyc?.lastname}`
-        );
 
         return res.status(200).json({ pago, newOrder });
       } else if (order?.tipo == "INTERCAMBIO") {
@@ -1777,6 +1773,7 @@ export const cancelarReclamacion = async (req: Request, res: Response) => {
       { status: "PAGO_CANCELADO", complete_at: new Date(complete_at) },
       prisma
     );
+
     res.json({ cancelClaim, updated });
   } catch (error) {
     console.log(error);

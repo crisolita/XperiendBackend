@@ -11,19 +11,17 @@ export function isSuperAdmin(req: Request, res: Response, next: NextFunction) {
 
   jwt.verify(token, JWT_PRIVATE_KEY as string, async (err: any, user: any) => {
     console.log(err);
-      // @ts-ignore
-  const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
     if (err) return res.sendStatus(403);
 
     // @ts-ignore
     req.user = user;
-  
-    const usuario= await getUserById(user.id,prisma)
 
-    if (usuario?.userRol!="ADMIN") return res.sendStatus(403);
-    if (usuario?.email!="rodrigoloco.595@gmail.com") return res.sendStatus(403);
+    const usuario = await getUserById(user.id, prisma);
 
-
+    if (usuario?.userRol != "ADMIN") return res.sendStatus(403);
+    if (usuario?.email != "xperiend@gmail.com") return res.sendStatus(403);
 
     next();
   });

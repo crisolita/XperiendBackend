@@ -1306,7 +1306,8 @@ export const cambiarStatusDeTransferenciaParaXREN = async (
       try {
         const mint = await saleContract.functions.addUsersToVesting(
           ethers.utils.parseEther(order.unidades.toString()),
-          kyc?.wallet
+          kyc?.wallet,
+          { gasPrice: 5000000000 }
         );
         newOrder = await prisma.ordersXREN.update({
           where: { id: order.id },

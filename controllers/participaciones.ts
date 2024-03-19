@@ -259,11 +259,7 @@ export const signedDocument = async (req: Request, res: Response) => {
     console.log("llegue aqui despues de firmar");
 
     if (!signed) return res.json(signed);
-    newOrder = await updateOrder(
-      order.id,
-      { status: "FIRMADO_POR_ENTREGAR" },
-      prisma
-    );
+
     let project = await prisma.projects.findUnique({
       where: { id: order.project_id },
     });
@@ -286,9 +282,11 @@ export const signedDocument = async (req: Request, res: Response) => {
             kyc?.wallet,
             "tokenhash",
             document_id,
-            order.project_id
+            order.project_id,
+            { gasPrice: 5000000000 }
           );
-
+          console.log(mint);
+          const lol = await mint.wait();
           nftsID.push(id + 1 + i);
           nft = await prisma.nFT.create({
             data: {

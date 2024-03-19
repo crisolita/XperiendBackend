@@ -1734,7 +1734,9 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Orden no encontrada" });
     const user = await getUserById(order.user_id, prisma);
     if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
-    const endClaim = await xperiendNFT.endClaim(order.nft_id[0]);
+    for (let nft_id of order.nft_id) {
+      let endClaim = await xperiendNFT.endClaim(order.nft_id[0]);
+    }
     const updated = await updateOrder(
       order_id,
       {
@@ -1749,7 +1751,7 @@ export const terminarReclamacion = async (req: Request, res: Response) => {
       user.email,
       user.userName ? user.userName : "usuario"
     );
-    res.json({ endClaim, updated });
+    res.json(updated);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -1768,14 +1770,19 @@ export const cancelarReclamacion = async (req: Request, res: Response) => {
       order.tipo != "RECLAMACION"
     )
       return res.status(404).json({ error: "Orden no encontrada" });
-    const cancelClaim = await xperiendNFT.cancelClaim(order.nft_id[0]);
+    for (let nft_id of order.nft_id) {
+      let cancelClaim = await xperiendNFT.cancelClaim(order.nft_id[0], {
+        gasPrice: 5000000000,
+      });
+    }
+
     const updated = await updateOrder(
       order_id,
       { status: "PAGO_CANCELADO", complete_at: new Date(complete_at) },
       prisma
     );
 
-    res.json({ cancelClaim, updated });
+    res.json(updated);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -1795,12 +1802,15 @@ export const terminarReinversion = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Orden no encontrada" });
     const user = await getUserById(order.user_id, prisma);
     if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
-    const endReinvest = await xperiendNFT.endReinvest(
-      order.nft_id[0],
-      order.project_id,
-      reference_number,
-      order.document_id
-    );
+    for (let nft_id of order.nft_id) {
+      let endReinvest = await xperiendNFT.endReinvest(
+        order.nft_id,
+        order.project_id,
+        reference_number,
+        order.document_id,
+        { gasPrice: 5000000000 }
+      );
+    }
     const updated = await updateOrder(
       order_id,
       {
@@ -1815,7 +1825,7 @@ export const terminarReinversion = async (req: Request, res: Response) => {
       user.email,
       user.userName ? user.userName : "usuario"
     );
-    res.json({ endReinvest, updated });
+    res.json(updated);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -1834,13 +1844,17 @@ export const cancelarReinversion = async (req: Request, res: Response) => {
       order.tipo != "REINVERSION"
     )
       return res.status(404).json({ error: "Orden no encontrada" });
-    const cancelReinvest = await xperiendNFT.cancelReinvest(order.nft_id[0]);
+    for (let nft_id of order.nft_id) {
+      let cancelReinvest = await xperiendNFT.cancelReinvest(order.nft_id[0], {
+        gasPrice: 5000000000,
+      });
+    }
     const updated = await updateOrder(
       order_id,
       { status: "PAGO_CANCELADO", complete_at: new Date(complete_at) },
       prisma
     );
-    res.json({ cancelReinvest, updated });
+    res.json(updated);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);

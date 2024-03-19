@@ -278,7 +278,7 @@ export const signedDocument = async (req: Request, res: Response) => {
         let id = await xperiendNFT.functions.id();
         id = ethers.BigNumber.from(id[0]._hex).toNumber();
         for (let i = 0; i < order.cantidad; i++) {
-          const mint = await xperiendNFT.functions.safeMint(
+          let mint = await xperiendNFT.functions.safeMint(
             kyc?.wallet,
             "tokenhash",
             document_id,
@@ -286,7 +286,7 @@ export const signedDocument = async (req: Request, res: Response) => {
             { gasPrice: 5000000000 }
           );
           console.log(mint);
-          const lol = await mint.wait();
+          let lol = await mint.wait();
           nftsID.push(id + 1 + i);
           nft = await prisma.nFT.create({
             data: {

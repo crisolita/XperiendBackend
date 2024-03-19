@@ -170,8 +170,8 @@ export const crearDocumentoDeCompra = async (
 export const crearDocumentoReclamacion = async (
   userId: number,
   project_id: number,
-  order: Orders,
   template_id: string,
+  cantidad: number,
   prisma: PrismaClient
 ) => {
   const user = await getUserById(userId, prisma);
@@ -263,11 +263,13 @@ export const crearDocumentoReclamacion = async (
         },
         {
           name: "Document.num_participaciones",
-          value: `1`,
+          value: `${cantidad}`,
         },
         {
           name: "Document.importe",
-          value: `${project?.precio_unitario ? project?.precio_unitario : 0}`,
+          value: `${
+            project?.precio_unitario ? project?.precio_unitario * cantidad : 0
+          }`,
         },
       ],
     };
@@ -301,8 +303,8 @@ export const crearDocumentoReclamacion = async (
 export const crearDocumentoReinversion = async (
   userId: number,
   project_id: number,
-  order: Orders,
   template_id: string,
+  cantidad: number,
   prisma: PrismaClient
 ) => {
   const user = await getUserById(userId, prisma);
@@ -394,11 +396,13 @@ export const crearDocumentoReinversion = async (
         },
         {
           name: "Document.num_participaciones",
-          value: `1`,
+          value: `${cantidad}`,
         },
         {
           name: "Document.importe",
-          value: `${project?.precio_unitario ? project?.precio_unitario : 0}`,
+          value: `${
+            project?.precio_unitario ? project?.precio_unitario * cantidad : 0
+          }`,
         },
       ],
     };

@@ -344,6 +344,393 @@ export const signedDocument = async (req: Request, res: Response) => {
     res.status(500).json(error);
   }
 };
+
+export const crearReclamar = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER = req.user as User;
+    const { nftIds, project_id } = req.body;
+    const project = await getProjectById(project_id, prisma);
+    if (!project || project.estado != "CERRADO")
+      return res
+        .status(404)
+        .json({ error: "Proyecto no encontrado o terminado" });
+
+    const gestion = await getGestionByProjectId(project.id, prisma);
+    const now = moment();
+    if (
+      !now.isBetween(
+        moment(gestion?.fecha_inicio_reclamo),
+        moment(gestion?.fecha_fin_reclamo)
+      )
+    )
+      return res
+        .status(400)
+        .json({ error: "No esta en la etapa de intercambio" });
+    const template = await prisma.templates.findFirst({
+      where: { project_id: project.id, document_type: "RECLAMACION" },
+    });
+    if (!template)
+      return res.status(404).json({ error: "Template no encontrado" });
+    for (let nftId of nftIds) {
+      const claim = await xperiendNFT.getClaim(nftId);
+      const nft = await prisma.nFT.findUnique({ where: { id: nftId } });
+      if (!nft || claim.status != 1 || nft.project_id != project_id)
+        return res.status(404).json({ error: "NFT no encontrado" });
+    }
+
+    const doc = await crearDocumentoReclamacion(
+      USER.id,
+      project.id,
+      template.template_id,
+      nftIds.length,
+      prisma
+    );
+
+    const order = await prisma.orders.create({
+      data: {
+        tipo: "RECLAMACION",
+        user_id: USER.id,
+        project_id: project.id,
+        document_id: doc?.id,
+        url_sign: doc?.link,
+        status: "POR_FIRMAR",
+        cantidad: nftIds.length,
+        nft_id: nftIds,
+      },
+    });
+    await reclamacionPeticion(USER.email, "usuario");
+    res.json(order);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const crearReinversion = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    //        // @ts-ignore
+    const USER = req.user as User;
+    const { nftIds, project_id } = req.body;
+    const project = await getProjectById(project_id, prisma);
+    if (!project || project.estado != "CERRADO")
+      return res
+        .status(404)
+        .json({ error: "Proyecto no encontrado o terminado" });
+    const gestion = await getGestionByProjectId(project.id, prisma);
+    const now = moment();
+
+    if (
+      !now.isBetween(
+        moment(gestion?.fecha_inicio_reinversion),
+        moment(gestion?.fecha_fin_reinversion)
+      )
+    )
+      return res
+        .status(400)
+        .json({ error: "No esta en la etapa de intercambio" });
+
+    const template = await prisma.templates.findFirst({
+      where: { project_id: project.id, document_type: "REINVERSION" },
+    });
+    if (!template)
+      return res.status(404).json({ error: "Template no encotrado" });
+    for (let nftId of nftIds) {
+      const reinvest = await xperiendNFT.getReinvest(nftId);
+      const nft = await prisma.nFT.findUnique({ where: { id: nftId } });
+      if (!nft || reinvest.status != 1 || nft.project_id != project_id)
+        return res.status(404).json({ error: "NFT no encontrado" });
+    }
+
+    const doc = await crearDocumentoReinversion(
+      USER.id,
+      project.id,
+      template.template_id,
+      nftIds.length,
+      prisma
+    );
+    const order = await prisma.orders.create({
+      data: {
+        tipo: "REINVERSION",
+        user_id: USER.id,
+        project_id: project.id,
+        status: "POR_FIRMAR",
+        document_id: doc?.id,
+        url_sign: doc?.link,
+        cantidad: nftIds.length,
+        nft_id: nftIds,
+      },
+    });
+    await reinversionPeticion(USER.email, "usuario");
+    res.json(order);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+
+export const ordersByUser = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;
+    const allOrders = await prisma.orders.findMany({
+      where: { user_id: USER.id },
+    });
+    let orders = [];
+    let projectImage;
+    for (let order of allOrders) {
+      const project = await getProjectById(order.project_id, prisma);
+      const nftImage = await prisma.projectImages.findFirst({
+        where: { project_id: order.project_id, rol: "NFT" },
+      });
+      if (!nftImage) {
+        projectImage = await prisma.projectImages.findFirst({
+          where: { project_id: order.project_id, rol: "NFT" },
+        });
+      }
+      if (!project || !project.precio_unitario) continue;
+      orders.push({
+        order,
+        precio: project.precio_unitario * order.cantidad,
+        nombre_proyecto: project.titulo,
+        imageNFT: nftImage
+          ? await getImage(nftImage.path)
+          : projectImage
+          ? await getImage(projectImage.path)
+          : "",
+      });
+    }
+    res.json(orders);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const orders = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const orders = await prisma.orders.findMany();
+    let data = [];
+    let imageURL;
+    for (let order of orders) {
+      const imagePath = await prisma.projectImages.findFirst({
+        where: { project_id: order.project_id, rol: "PRINCIPAL" },
+      });
+      if (imagePath) {
+        imageURL = await getImage(imagePath.path);
+      }
+      const kyc = await getKycInfoByUser(order.user_id, prisma);
+      data.push({
+        order,
+        imageURL,
+        username: `${kyc?.name} ${kyc?.lastname}`,
+      });
+    }
+    res.json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const allPagos = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+
+    const pagos = await prisma.pagos.findMany();
+    res.json(pagos);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const pagosByUser = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;
+    const pagos = await prisma.pagos.findMany({ where: { user_id: USER.id } });
+    res.json(pagos);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const documentosToUser = async (req: Request, res: Response) => {
+  try {
+    //@ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    const USER = req.user as User;
+    const { project_id } = req.query;
+
+    const project = await getProjectById(Number(project_id), prisma);
+    if (!project)
+      return res.status(404).json({ error: "Proyecto no encontrado" });
+
+    const user = await getUserById(USER.id, prisma);
+    const documentosUser = await prisma.projectDocs.findMany({
+      where: {
+        visible: true,
+        user_rol_visible: "CLIENT",
+        project_id: project.id,
+      },
+    });
+
+    let documentos: any[] = [];
+    if (user?.kycStatus === "APROBADO") {
+      const documentosKyc = await prisma.projectDocs.findMany({
+        where: {
+          visible: true,
+          user_rol_visible: "KYC",
+          project_id: project.id,
+        },
+      });
+
+      const owner = await prisma.orders.findFirst({
+        where: {
+          user_id: user.id,
+          status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+          project_id: project.id,
+        },
+      });
+
+      const documentosOwner = owner
+        ? await prisma.projectDocs.findMany({
+            where: {
+              visible: true,
+              user_rol_visible: "OWNER",
+              project_id: project.id,
+            },
+          })
+        : [];
+
+      documentos = owner
+        ? documentosUser.concat(documentosKyc, documentosOwner)
+        : documentosKyc.concat(documentosUser);
+    } else {
+      documentos = documentosUser;
+    }
+
+    const data = await Promise.all(
+      documentos.map(async (doc) => ({
+        id: doc.id,
+        rol: doc.rol,
+        path: await getDoc(doc.path),
+      }))
+    );
+
+    res.json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+
+export const confirmCompraParticipacionStripe = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;
+    const { orderId } = req.body;
+    let order = await getOrderById(orderId, prisma);
+    const kycInfo = await getKycInfoByUser(USER.id, prisma);
+    console.log(order);
+    if (
+      !order ||
+      !order.checkout_id ||
+      !kycInfo?.wallet ||
+      order.status != "PAGO_PENDIENTE" ||
+      order.user_id != USER.id
+    )
+      return res
+        .status(404)
+        .json({ error: "Orden no encontrada o no activa para validar pago" });
+    const project = await getProjectById(order.project_id, prisma);
+
+    /// Confirm
+    const paid = await validateCheckout(order.checkout_id);
+    if (paid.payment_status == "paid") {
+      if (project?.precio_unitario) {
+        const pago = await crearPago(
+          USER.id,
+          order.cantidad * project?.precio_unitario,
+          "TARJETA_DE_CREDITO",
+          new Date(),
+          "Compra de participacion",
+          prisma
+        );
+        const template_id = await prisma.templates.findFirst({
+          where: { project_id: project.id, document_type: "COMPRA" },
+        });
+        if (!template_id)
+          return res.status(404).json({ error: "No template id encontrado" });
+        const docData = await crearDocumentoDeCompra(
+          USER.id,
+          project.id,
+          order,
+          template_id.template_id,
+          prisma
+        );
+        if (!docData)
+          return res.status(500).json({ error: "Falla al crear documento" });
+        order = await prisma.orders.update({
+          where: { id: orderId },
+          data: {
+            document_id: docData.id,
+            url_sign: docData.link,
+            fecha: new Date(),
+            status: "POR_FIRMAR",
+          },
+        });
+
+        return res.status(200).json({ pago, order });
+      }
+    } else return res.status(400).json({ error: "No hay pago" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+export const cancelCompraParticipacionStripe = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // @ts-ignore
+    const prisma = req.prisma as PrismaClient;
+    // @ts-ignore
+    const USER = req.user as User;
+    const { orderId } = req.body;
+    let order = await getOrderById(orderId, prisma);
+    if (
+      !order ||
+      !order.checkout_id ||
+      order.status != "PAGO_PENDIENTE" ||
+      order.user_id != USER.id
+    )
+      return res
+        .status(404)
+        .json({ error: "Orden no encontrada o no activa para validar pago" });
+
+    order = await prisma.orders.delete({ where: { id: orderId } });
+    return res.status(200).json(order);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+
 export const createIntercambio = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
@@ -630,406 +1017,6 @@ export const acceptIntercambioTransferencia = async (
       prisma
     );
     res.json(newOrder);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-
-export const crearReclamar = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    //        // @ts-ignore
-    const USER = req.user as User;
-    const { nftId } = req.body;
-    const claim = await xperiendNFT.getClaim(nftId);
-    const nft = await prisma.nFT.findUnique({ where: { id: nftId } });
-    if (!nft) return res.status(404).json({ error: "NFT no encontrado" });
-    const project = await getProjectById(nft?.project_id, prisma);
-    if (!project || project.estado != "CERRADO" || claim.status != 1)
-      return res
-        .status(404)
-        .json({ error: "Proyecto no encontrado o terminado" });
-    const gestion = await getGestionByProjectId(project.id, prisma);
-    const now = moment();
-
-    if (
-      !now.isBetween(
-        moment(gestion?.fecha_inicio_reclamo),
-        moment(gestion?.fecha_fin_reclamo)
-      )
-    )
-      return res
-        .status(400)
-        .json({ error: "No esta en la etapa de intercambio" });
-    const template = await prisma.templates.findFirst({
-      where: { project_id: project.id, document_type: "RECLAMACION" },
-    });
-    if (!template)
-      return res.status(404).json({ error: "Template no encotrado" });
-    if (!nft.order_id)
-      return res
-        .status(400)
-        .json({ error: "No hay orden asignada a este NFT" });
-    const oldOrder = await prisma.orders.findUnique({
-      where: {
-        id: nft.order_id,
-      },
-    });
-    if (!oldOrder)
-      return res.status(400).json({ error: "Orden no encontrada" });
-    const doc = await crearDocumentoReclamacion(
-      USER.id,
-      project.id,
-      oldOrder,
-      template.template_id,
-      prisma
-    );
-
-    const order = await prisma.orders.create({
-      data: {
-        tipo: "RECLAMACION",
-        user_id: USER.id,
-        project_id: project.id,
-        document_id: doc?.id,
-        url_sign: doc?.link,
-        status: "POR_FIRMAR",
-        cantidad: 1,
-        nft_id: nftId,
-      },
-    });
-    await reclamacionPeticion(USER.email, "usuario");
-    res.json(order);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-export const crearReinversion = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    //        // @ts-ignore
-    const USER = req.user as User;
-    const { nftId } = req.body;
-    const reinvest = await xperiendNFT.getReinvest(nftId);
-    const nft = await prisma.nFT.findUnique({ where: { id: nftId } });
-    if (!nft) return res.status(404).json({ error: "NFT no encontrado" });
-    const project = await getProjectById(nft?.project_id, prisma);
-    if (!project || project.estado != "CERRADO" || reinvest.status != 1)
-      return res
-        .status(404)
-        .json({ error: "Proyecto no encontrado o terminado" });
-    const gestion = await getGestionByProjectId(project.id, prisma);
-    const now = moment();
-
-    if (
-      !now.isBetween(
-        moment(gestion?.fecha_inicio_reinversion),
-        moment(gestion?.fecha_fin_reinversion)
-      )
-    )
-      return res
-        .status(400)
-        .json({ error: "No esta en la etapa de intercambio" });
-
-    const template = await prisma.templates.findFirst({
-      where: { project_id: project.id, document_type: "REINVERSION" },
-    });
-    if (!template)
-      return res.status(404).json({ error: "Template no encotrado" });
-    if (!nft.order_id)
-      return res
-        .status(400)
-        .json({ error: "No hay orden asignada a este NFT" });
-    const oldOrder = await prisma.orders.findUnique({
-      where: {
-        id: nft.order_id,
-      },
-    });
-    if (!oldOrder)
-      return res.status(400).json({ error: "Orden no encontrada" });
-    const doc = await crearDocumentoReinversion(
-      USER.id,
-      project.id,
-      oldOrder,
-      template.template_id,
-      prisma
-    );
-    const order = await prisma.orders.create({
-      data: {
-        tipo: "REINVERSION",
-        user_id: USER.id,
-        project_id: project.id,
-        status: "POR_FIRMAR",
-        document_id: doc?.id,
-        url_sign: doc?.link,
-        cantidad: 1,
-        nft_id: nftId,
-      },
-    });
-    await reinversionPeticion(USER.email, "usuario");
-    res.json(order);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-
-export const ordersByUser = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    // @ts-ignore
-    const USER = req.user as User;
-    const allOrders = await prisma.orders.findMany({
-      where: { user_id: USER.id },
-    });
-    let orders = [];
-    let projectImage;
-    for (let order of allOrders) {
-      const project = await getProjectById(order.project_id, prisma);
-      const nftImage = await prisma.projectImages.findFirst({
-        where: { project_id: order.project_id, rol: "NFT" },
-      });
-      if (!nftImage) {
-        projectImage = await prisma.projectImages.findFirst({
-          where: { project_id: order.project_id, rol: "NFT" },
-        });
-      }
-      if (!project || !project.precio_unitario) continue;
-      orders.push({
-        order,
-        precio: project.precio_unitario * order.cantidad,
-        nombre_proyecto: project.titulo,
-        imageNFT: nftImage
-          ? await getImage(nftImage.path)
-          : projectImage
-          ? await getImage(projectImage.path)
-          : "",
-      });
-    }
-    res.json(orders);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-export const orders = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const orders = await prisma.orders.findMany();
-    let data = [];
-    let imageURL;
-    for (let order of orders) {
-      const imagePath = await prisma.projectImages.findFirst({
-        where: { project_id: order.project_id, rol: "PRINCIPAL" },
-      });
-      if (imagePath) {
-        imageURL = await getImage(imagePath.path);
-      }
-      const kyc = await getKycInfoByUser(order.user_id, prisma);
-      data.push({
-        order,
-        imageURL,
-        username: `${kyc?.name} ${kyc?.lastname}`,
-      });
-    }
-    res.json(data);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-export const allPagos = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-
-    const pagos = await prisma.pagos.findMany();
-    res.json(pagos);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-export const pagosByUser = async (req: Request, res: Response) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    // @ts-ignore
-    const USER = req.user as User;
-    const pagos = await prisma.pagos.findMany({ where: { user_id: USER.id } });
-    res.json(pagos);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-export const documentosToUser = async (req: Request, res: Response) => {
-  try {
-    //@ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    const USER = req.user as User;
-    const { project_id } = req.query;
-
-    const project = await getProjectById(Number(project_id), prisma);
-    if (!project)
-      return res.status(404).json({ error: "Proyecto no encontrado" });
-
-    const user = await getUserById(USER.id, prisma);
-    const documentosUser = await prisma.projectDocs.findMany({
-      where: {
-        visible: true,
-        user_rol_visible: "CLIENT",
-        project_id: project.id,
-      },
-    });
-
-    let documentos: any[] = [];
-    if (user?.kycStatus === "APROBADO") {
-      const documentosKyc = await prisma.projectDocs.findMany({
-        where: {
-          visible: true,
-          user_rol_visible: "KYC",
-          project_id: project.id,
-        },
-      });
-
-      const owner = await prisma.orders.findFirst({
-        where: {
-          user_id: user.id,
-          status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
-          project_id: project.id,
-        },
-      });
-
-      const documentosOwner = owner
-        ? await prisma.projectDocs.findMany({
-            where: {
-              visible: true,
-              user_rol_visible: "OWNER",
-              project_id: project.id,
-            },
-          })
-        : [];
-
-      documentos = owner
-        ? documentosUser.concat(documentosKyc, documentosOwner)
-        : documentosKyc.concat(documentosUser);
-    } else {
-      documentos = documentosUser;
-    }
-
-    const data = await Promise.all(
-      documentos.map(async (doc) => ({
-        id: doc.id,
-        rol: doc.rol,
-        path: await getDoc(doc.path),
-      }))
-    );
-
-    res.json(data);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-
-export const confirmCompraParticipacionStripe = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    // @ts-ignore
-    const USER = req.user as User;
-    const { orderId } = req.body;
-    let order = await getOrderById(orderId, prisma);
-    const kycInfo = await getKycInfoByUser(USER.id, prisma);
-    console.log(order);
-    if (
-      !order ||
-      !order.checkout_id ||
-      !kycInfo?.wallet ||
-      order.status != "PAGO_PENDIENTE" ||
-      order.user_id != USER.id
-    )
-      return res
-        .status(404)
-        .json({ error: "Orden no encontrada o no activa para validar pago" });
-    const project = await getProjectById(order.project_id, prisma);
-
-    /// Confirm
-    const paid = await validateCheckout(order.checkout_id);
-    if (paid.payment_status == "paid") {
-      if (project?.precio_unitario) {
-        const pago = await crearPago(
-          USER.id,
-          order.cantidad * project?.precio_unitario,
-          "TARJETA_DE_CREDITO",
-          new Date(),
-          "Compra de participacion",
-          prisma
-        );
-        const template_id = await prisma.templates.findFirst({
-          where: { project_id: project.id, document_type: "COMPRA" },
-        });
-        if (!template_id)
-          return res.status(404).json({ error: "No template id encontrado" });
-        const docData = await crearDocumentoDeCompra(
-          USER.id,
-          project.id,
-          order,
-          template_id.template_id,
-          prisma
-        );
-        if (!docData)
-          return res.status(500).json({ error: "Falla al crear documento" });
-        order = await prisma.orders.update({
-          where: { id: orderId },
-          data: {
-            document_id: docData.id,
-            url_sign: docData.link,
-            fecha: new Date(),
-            status: "POR_FIRMAR",
-          },
-        });
-
-        return res.status(200).json({ pago, order });
-      }
-    } else return res.status(400).json({ error: "No hay pago" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
-  }
-};
-export const cancelCompraParticipacionStripe = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    // @ts-ignore
-    const prisma = req.prisma as PrismaClient;
-    // @ts-ignore
-    const USER = req.user as User;
-    const { orderId } = req.body;
-    let order = await getOrderById(orderId, prisma);
-    if (
-      !order ||
-      !order.checkout_id ||
-      order.status != "PAGO_PENDIENTE" ||
-      order.user_id != USER.id
-    )
-      return res
-        .status(404)
-        .json({ error: "Orden no encontrada o no activa para validar pago" });
-
-    order = await prisma.orders.delete({ where: { id: orderId } });
-    return res.status(200).json(order);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);

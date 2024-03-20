@@ -331,10 +331,24 @@ export const signedDocument = async (req: Request, res: Response) => {
         );
         break;
       case "RECLAMACION":
+        newOrder = await updateOrder(
+          order.id,
+          {
+            status: "FIRMADO_POR_ENTREGAR",
+          },
+          prisma
+        );
         break;
       case "RECOMPRA":
         break;
       case "REINVERSION":
+        newOrder = await updateOrder(
+          order.id,
+          {
+            status: "FIRMADO_POR_ENTREGAR",
+          },
+          prisma
+        );
         break;
     }
 

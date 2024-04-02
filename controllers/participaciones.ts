@@ -264,14 +264,13 @@ export const signedDocument = async (req: Request, res: Response) => {
       where: { id: order.project_id },
     });
 
-    if (!project?.cantidadRestante)
-      return res.status(400).json({
-        error:
-          "No hay cantidad restante, escribe a atencion al cliente para la devolucion de la inversion",
-      });
-
     switch (order.tipo) {
       case "COMPRA":
+        if (!project?.cantidadRestante)
+          return res.status(400).json({
+            error:
+              "No hay cantidad restante, escribe a atencion al cliente para la devolucion de la inversion",
+          });
         ///MINTEAR UN NFT?
         console.log("Voy a mintear");
         let nftsID = [];

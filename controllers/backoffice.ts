@@ -1,4 +1,4 @@
-import { PrismaClient, User } from "@prisma/client";
+import { Orders, PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import {
   deleteImageAWS,
@@ -1109,7 +1109,18 @@ export const getAllProjectsPublic = async (req: Request, res: Response) => {
           path: ruta,
         });
       }
-
+      const finishedOrders = await prisma.orders.findMany({
+        where: {
+          project_id: project.id,
+          status: "PAGADO_Y_ENTREGADO_Y_FIRMADO",
+        },
+      });
+      let investors: number[] = [];
+      for (let order of finishedOrders) {
+        if (!investors.includes(order.user_id)) {
+          investors.push(order.user_id);
+        }
+      }
       data.push({
         project,
         escenario,
@@ -1117,6 +1128,7 @@ export const getAllProjectsPublic = async (req: Request, res: Response) => {
         cuenta,
         imagenes,
         userSale,
+        investors: investors.length,
       });
     }
     return res.json(data);
@@ -1392,6 +1404,7 @@ export const getGestionVentaXREN = async (req: Request, res: Response) => {
     // @ts-ignore
     const prisma = req.prisma as PrismaClient;
     const gestionXREN = await prisma.gestionXREN.findFirst();
+    console.log(gestionXREN);
     return res.json(gestionXREN);
   } catch (e) {
     console.log(e);
